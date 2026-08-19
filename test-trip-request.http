@@ -1,0 +1,29 @@
+### Create Trip Request
+POST http://localhost:8080/api/v1/trip-requests
+Content-Type: application/json
+
+{
+  "touristId": "11111111-1111-1111-1111-111111111111",
+  "pickupDescription": "Biju Patnaik International Airport, Bhubaneswar",
+  "pickupLatitude": 20.2516,
+  "pickupLongitude": 85.8182,
+  "stops": [
+    {
+      "description": "Puri",
+      "latitude": 19.8135,
+      "longitude": 85.8312
+    },
+    {
+      "description": "Konark Sun Temple",
+      "latitude": 19.8876,
+      "longitude": 86.0945
+    }
+  ],
+  "destinationDescription": "Bhubaneswar",
+  "destinationLatitude": 20.2961,
+  "destinationLongitude": 85.8245,
+  "startDate": "2026-09-10",
+  "endDate": "2026-09-14",
+  "passengerCount": 4,
+  "tripBrief": "We are a family of four visiting Odisha. We want a relaxed trip covering Puri and Konark. We prefer comfortable travel and do not want the itinerary to be too rushed."
+}

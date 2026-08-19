@@ -1,0 +1,17 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: yocabs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: yocabs
+      POSTGRES_USER: yocabs
+      POSTGRES_PASSWORD: yocabs_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - yocabs-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  yocabs-postgres-data:

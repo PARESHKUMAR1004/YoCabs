@@ -1,0 +1,2 @@
+-- Initial YoCabs database migration.
+-- Business tables will be introduced in subsequent migrations.
