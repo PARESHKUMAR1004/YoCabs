@@ -1,0 +1,2 @@
+### Get Trip Request
+GET http://localhost:8080/api/v1/trip-requests/afd4874e-242e-4725-946d-739579bb59a3

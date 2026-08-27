@@ -1,0 +1,613 @@
+YoCabs Application — Tested REST API Documentation
+======================================================
+
+This document records REST endpoints explicitly implemented and tested successfully during the MVP development sequence.
+
+Placeholder convention
+----------------------
+<...> values are placeholders for actual UUIDs.
+
+1. TRAVEL PARTNER APIs
+======================
+
+Base URL:
+http://localhost:8080/api/v1/travel-partners
+
+1.1 Create Travel Partner
+POST /api/v1/travel-partners
+
+Request:
+{
+  "name": "ABC Travels"
+}
+
+Parameters:
+- name: String, required, maximum 200 characters.
+
+Response:
+HTTP 201 Created
+Body: UUID
+
+Initial status:
+PENDING_APPROVAL
+
+
+1.2 Activate Travel Partner
+POST /api/v1/travel-partners/{id}/activate
+
+Path:
+- id: UUID, required, travel partner ID.
+
+Body: None
+
+Response:
+HTTP 200 OK
+Body: UUID
+
+Rule:
+Only PENDING_APPROVAL partners can be activated.
+
+
+1.3 Add Service Area
+POST /api/v1/travel-partners/{id}/service-areas
+
+Path:
+- id: UUID, required, travel partner ID.
+
+Request:
+{
+  "name": "Bhubaneswar",
+  "latitude": 20.2961,
+  "longitude": 85.8245,
+  "radiusKm": 50
+}
+
+Fields:
+- name: String, required.
+- latitude: double, -90 to 90.
+- longitude: double, -180 to 180.
+- radiusKm: double, greater than 0.
+
+Response:
+HTTP 201 Created
+Body: UUID
+
+
+1.4 Update Service Area
+PUT /api/v1/travel-partners/{partnerId}/service-areas/{serviceAreaId}
+
+Path:
+- partnerId: UUID, required.
+- serviceAreaId: UUID, required.
+
+Request:
+{
+  "name": "Bhubaneswar",
+  "latitude": 20.2961,
+  "longitude": 85.8245,
+  "radiusKm": 75
+}
+
+Response:
+HTTP 200 OK
+Body: UUID
+
+
+1.5 Remove Service Area
+DELETE /api/v1/travel-partners/{partnerId}/service-areas/{serviceAreaId}
+
+Path:
+- partnerId: UUID, required.
+- serviceAreaId: UUID, required.
+
+Body: None
+
+Response:
+HTTP 204 No Content
+
+
+2. VEHICLE APIs
+===============
+
+Base URL:
+http://localhost:8080/api/v1/vehicles
+
+2.1 Create Vehicle
+POST /api/v1/vehicles
+
+Request:
+{
+  "travelPartnerId": "<TRAVEL-PARTNER-UUID>",
+  "registrationNumber": "OD02AB1234",
+  "make": "Toyota",
+  "model": "Innova Crysta",
+  "category": "MUV",
+  "passengerCapacity": 7
+}
+
+Fields:
+- travelPartnerId: UUID, required.
+- registrationNumber: String, required.
+- make: String, required.
+- model: String, required.
+- category: VehicleCategory, required.
+  Values: SEDAN, SUV, MUV, TEMPO_TRAVELLER, BUS.
+- passengerCapacity: int, required, greater than 0.
+
+Response:
+HTTP 201 Created
+Body: Vehicle UUID.
+
+Business rule tested:
+Only ACTIVE travel partners can manage/create fleet vehicles.
+
+
+2.2 Get Vehicle
+GET /api/v1/vehicles/{id}
+
+Path:
+- id: UUID, required.
+
+Body: None
+
+Response:
+HTTP 200 OK
+Returns the vehicle response.
+
+
+2.3 List Vehicles
+GET /api/v1/vehicles/travel-partner/{travelPartnerId}
+
+Path:
+- travelPartnerId: UUID, required.
+
+Body: None
+
+Response:
+HTTP 200 OK
+Returns vehicles belonging to the travel partner.
+
+
+3. PRICING CONFIGURATION APIs
+=============================
+
+Base URL:
+http://localhost:8080/api/v1/pricing-configurations
+
+3.1 Create Pricing Configuration
+POST /api/v1/pricing-configurations
+
+Request:
+{
+  "vehicleId": "<VEHICLE-UUID>",
+  "tripType": "CHAUFFEUR_ONE_WAY",
+  "baseFee": 600,
+  "perKmCharge": 20,
+  "driverAllowance": 350,
+  "minimumBillableKm": 50,
+  "includedDurationMinutes": null,
+  "includedDistanceKm": null,
+  "packagePrice": null,
+  "extraHourCharge": null,
+  "extraKmCharge": null
+}
+
+Fields:
+- vehicleId: UUID, required.
+- tripType: TripType, required.
+  Values: CHAUFFEUR_ONE_WAY, CHAUFFEUR_ROUND_TRIP, CHAUFFEUR_RENTAL.
+- baseFee: BigDecimal.
+- perKmCharge: BigDecimal.
+- driverAllowance: BigDecimal.
+- minimumBillableKm: BigDecimal.
+- includedDurationMinutes: Integer.
+- includedDistanceKm: BigDecimal.
+- packagePrice: BigDecimal.
+- extraHourCharge: BigDecimal.
+- extraKmCharge: BigDecimal.
+
+Required pricing fields depend on trip type.
+
+Response:
+HTTP 201 Created
+Returns PricingConfigurationResponse.
+
+Constraint:
+One configuration per (vehicleId, tripType).
+
+
+3.2 Get Pricing Configuration
+GET /api/v1/pricing-configurations/{id}
+
+Path:
+- id: UUID, required.
+
+Body: None
+
+Response:
+HTTP 200 OK
+
+
+3.3 Get Pricing Configurations by Vehicle
+GET /api/v1/pricing-configurations/vehicle/{vehicleId}
+
+Path:
+- vehicleId: UUID, required.
+
+Body: None
+
+Response:
+HTTP 200 OK
+Returns all configurations for the vehicle.
+
+
+3.4 Get Pricing Configuration by Vehicle and Trip Type
+GET /api/v1/pricing-configurations/vehicle/{vehicleId}/{tripType}
+
+Path:
+- vehicleId: UUID, required.
+- tripType: TripType, required.
+
+Response:
+HTTP 200 OK
+
+
+3.5 Update Pricing Configuration
+PUT /api/v1/pricing-configurations/{id}
+
+Path:
+- id: UUID, required.
+
+Request example:
+{
+  "vehicleId": "<VEHICLE-UUID>",
+  "tripType": "CHAUFFEUR_ONE_WAY",
+  "baseFee": 600,
+  "perKmCharge": 20,
+  "driverAllowance": 350,
+  "minimumBillableKm": 50,
+  "includedDurationMinutes": null,
+  "includedDistanceKm": null,
+  "packagePrice": null,
+  "extraHourCharge": null,
+  "extraKmCharge": null
+}
+
+Important:
+- vehicleId is required by the current API contract.
+- vehicleId must match the existing configuration's vehicle.
+- tripType cannot be changed.
+
+Response:
+HTTP 200 OK
+
+
+3.6 Activate Pricing Configuration
+PATCH /api/v1/pricing-configurations/{id}/activate
+
+Path:
+- id: UUID, required.
+
+Body: None
+
+Response:
+HTTP 200 OK
+Effect: active = true
+
+
+3.7 Deactivate Pricing Configuration
+PATCH /api/v1/pricing-configurations/{id}/deactivate
+
+Path:
+- id: UUID, required.
+
+Body: None
+
+Response:
+HTTP 200 OK
+Effect: active = false
+
+
+4. PRICING CALCULATION API
+==========================
+
+Base URL:
+http://localhost:8080/api/v1/pricing
+
+4.1 Calculate Price
+POST /api/v1/pricing/calculate
+
+Request:
+{
+  "vehicleId": "<VEHICLE-UUID>",
+  "tripType": "CHAUFFEUR_ONE_WAY",
+  "distanceKm": 100,
+  "durationMinutes": null,
+  "startTime": null,
+  "endTime": null
+}
+
+Fields:
+- vehicleId: UUID, required.
+- tripType: TripType, required.
+- distanceKm: BigDecimal.
+- durationMinutes: Long; used by rental pricing.
+- startTime: Instant.
+- endTime: Instant.
+
+Response:
+HTTP 200 OK
+
+Current response structure:
+{
+  "totalAmount": 2950,
+  "currency": "INR",
+  "components": [
+    {
+      "code": "BASE_FEE",
+      "description": "Base fee",
+      "amount": 600
+    },
+    {
+      "code": "DISTANCE_CHARGE",
+      "description": "Distance charge",
+      "amount": 2000
+    },
+    {
+      "code": "DRIVER_ALLOWANCE",
+      "description": "Driver allowance",
+      "amount": 350
+    }
+  ]
+}
+
+
+5. TESTED PRICING CALCULATIONS
+==============================
+
+5.1 One-Way — 100 km
+Configuration:
+- Base fee: ₹600
+- Per km: ₹20
+- Driver allowance: ₹350
+- Minimum billable: 50 km
+
+Calculation:
+₹600 + (100 × ₹20) + ₹350 = ₹2,950
+
+
+5.2 One-Way — 30 km minimum
+Actual distance: 30 km
+Billable distance: 50 km
+
+Calculation:
+₹600 + (50 × ₹20) + ₹350 = ₹1,950
+
+
+5.3 Round-Trip — 150 km
+Configuration:
+- Base fee: ₹800
+- Per km: ₹16
+- Driver allowance: ₹500
+- Minimum billable: 100 km
+
+Calculation:
+₹800 + (150 × ₹16) + ₹500 = ₹3,700
+
+
+5.4 Rental — within package
+Configuration:
+- Included duration: 480 minutes (8 hours)
+- Included distance: 80 km
+- Package price: ₹2,500
+- Extra hour: ₹250
+- Extra km: ₹18
+- Driver allowance: ₹300
+
+Input:
+- Duration: 360 minutes (6 hours)
+- Distance: 60 km
+
+Calculation:
+₹2,500 + ₹300 = ₹2,800
+
+
+5.5 Rental — extra time and distance
+Input:
+- Duration: 600 minutes (10 hours)
+- Distance: 100 km
+
+Extra:
+- 2 hours × ₹250 = ₹500
+- 20 km × ₹18 = ₹360
+
+Calculation:
+₹2,500 + ₹500 + ₹360 + ₹300 = ₹3,660
+
+
+6. TRIP REQUEST APIs
+====================
+
+Base URL:
+http://localhost:8080/api/v1/trip-requests
+
+6.1 Create Trip Request
+POST /api/v1/trip-requests
+
+Request:
+{
+  "touristId": "<TOURIST-UUID>",
+  "pickupDescription": "Bhubaneswar Airport",
+  "pickupLatitude": 20.2444,
+  "pickupLongitude": 85.8178,
+  "stops": [],
+  "destinationDescription": "Puri",
+  "destinationLatitude": 19.8135,
+  "destinationLongitude": 85.8312,
+  "startDate": "2026-08-27",
+  "endDate": "2026-08-27",
+  "passengerCount": 4,
+  "tripBrief": "Airport to Puri"
+}
+
+Fields:
+- touristId: UUID.
+- pickupDescription: String.
+- pickupLatitude: Double.
+- pickupLongitude: Double.
+- stops: List<LocationCommand>.
+- destinationDescription: String.
+- destinationLatitude: Double.
+- destinationLongitude: Double.
+- startDate: LocalDate.
+- endDate: LocalDate.
+- passengerCount: int.
+- tripBrief: String.
+
+Response:
+HTTP 201 Created
+Body: Trip request UUID.
+
+
+6.2 Get Trip Request
+GET /api/v1/trip-requests/{id}
+
+Path:
+- id: UUID, required.
+
+Body: None
+
+Response:
+HTTP 200 OK
+Returns TripRequestResponse.
+
+
+6.3 Submit Trip Request
+POST /api/v1/trip-requests/{id}/submit
+
+Path:
+- id: UUID, required.
+
+Body: None
+
+Response:
+HTTP 200 OK
+Returns TripRequestResponse.
+
+Rule:
+Only DRAFT trip requests can be submitted.
+
+
+7. ELIGIBILITY API
+==================
+
+Base URL:
+http://localhost:8080/api/v1/trip-requests
+
+7.1 Get Eligible Options
+GET /api/v1/trip-requests/{tripRequestId}/eligible-options
+
+Path:
+- tripRequestId: UUID, required.
+
+Body: None
+
+Current flow:
+1. Load TripRequest.
+2. Load active travel-partner candidates.
+3. Apply TravelPartnerEligibilityService.
+4. Apply partner eligibility rules.
+5. Load vehicles belonging to eligible partners.
+6. Apply vehicle eligibility rules.
+7. Remove partners with no eligible vehicles.
+
+Current partner rules:
+- Travel partner must be ACTIVE.
+- Pickup must be within at least one configured service area.
+
+Current vehicle rules:
+- Passenger capacity must cover requested passengers.
+- Vehicle status must be AVAILABLE.
+
+Example response:
+[
+  {
+    "travelPartnerId": "<PARTNER-UUID>",
+    "travelPartnerName": "ABC Travels",
+    "vehicles": [
+      {
+        "vehicleId": "<VEHICLE-UUID>",
+        "registrationNumber": "OD02AB1234",
+        "make": "Toyota",
+        "model": "Innova Crysta",
+        "category": "MUV",
+        "passengerCapacity": 7
+      }
+    ]
+  }
+]
+
+
+8. COMMON REST ERROR HANDLING
+=============================
+
+IllegalArgumentException:
+HTTP 400 Bad Request
+
+{
+  "code": "BAD_REQUEST",
+  "message": "<error message>"
+}
+
+IllegalStateException:
+HTTP 409 Conflict
+
+{
+  "code": "CONFLICT",
+  "message": "<error message>"
+}
+
+Tested example:
+Inactive pricing configuration during calculation returns:
+409 Conflict
+"Pricing configuration is inactive"
+
+
+9. CURRENT VERIFIED FLOW
+========================
+
+Travel Partner
+    ↓
+Service Areas
+    ↓
+Vehicle
+    ↓
+Pricing Configuration
+    ↓
+Pricing Engine
+
+Trip Request
+    ↓
+Travel Partner Eligibility
+    ↓
+Vehicle Eligibility
+    ↓
+Eligible Partner + Vehicles
+    ↓
+Pricing Engine
+
+
+10. NOT YET TESTED/IMPLEMENTED AS REST FLOW
+===========================================
+
+- Automatic pricing of every eligible partner/vehicle for a submitted trip request.
+- Tourist acceptance of automatically generated price.
+- Tourist offer-price flow.
+- Travel partner accept/counter-offer flow.
+- Tourist accept/reject counter-offer flow.
+- Booking confirmation.
+- Distance/route provider integration.
+- Authentication and authorization.
+- Payment.
+- Notifications.
+- Vehicle-category search/filter request handling.

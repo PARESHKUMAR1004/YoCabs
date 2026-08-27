@@ -1,0 +1,17 @@
+### Update One-Way Pricing
+PUT http://localhost:8080/api/v1/pricing-configurations/aca24524-d577-44b3-b2ea-51b90666c241
+Content-Type: application/json
+
+{
+  "vehicleId": "9a6f3040-44c5-4cd6-9abe-7510a71ed278",
+  "tripType": "CHAUFFEUR_ONE_WAY",
+  "baseFee": 600,
+  "perKmCharge": 20,
+  "driverAllowance": 350,
+  "minimumBillableKm": 50,
+  "includedDurationMinutes": null,
+  "includedDistanceKm": null,
+  "packagePrice": null,
+  "extraHourCharge": null,
+  "extraKmCharge": null
+}

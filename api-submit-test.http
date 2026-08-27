@@ -1,0 +1,3 @@
+### Submit Trip Request
+POST http://localhost:8080/api/v1/trip-requests/7a714b72-54b0-4eb0-a3dc-d281794c77d1/submit
+Content-Type: application/json

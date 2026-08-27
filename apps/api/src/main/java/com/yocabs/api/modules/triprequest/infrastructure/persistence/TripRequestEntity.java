@@ -74,6 +74,7 @@ public class TripRequestEntity {
 
         entity.id = tripRequest.getId().value();
         entity.touristId = tripRequest.getTouristId().value();
+
         entity.status = tripRequest.getStatus().name();
 
         entity.startDate =
@@ -88,24 +89,98 @@ public class TripRequestEntity {
         entity.tripBrief =
                 tripRequest.getTripBrief().value();
 
-        Location pickup = tripRequest.getItinerary().pickup();
+        Location pickup =
+                tripRequest.getItinerary().pickup();
 
-        entity.pickupDescription = pickup.description();
-        entity.pickupLatitude = pickup.latitude();
-        entity.pickupLongitude = pickup.longitude();
+        entity.pickupDescription =
+                pickup.description();
+
+        entity.pickupLatitude =
+                pickup.latitude();
+
+        entity.pickupLongitude =
+                pickup.longitude();
 
         Location destination =
                 tripRequest.getItinerary().destination();
 
-        entity.destinationDescription = destination.description();
-        entity.destinationLatitude = destination.latitude();
-        entity.destinationLongitude = destination.longitude();
+        entity.destinationDescription =
+                destination.description();
 
-        entity.version = tripRequest.getVersion();
-        entity.createdAt = tripRequest.getCreatedAt();
-        entity.updatedAt = tripRequest.getUpdatedAt();
+        entity.destinationLatitude =
+                destination.latitude();
 
+        entity.destinationLongitude =
+                destination.longitude();
+
+        entity.createdAt =
+                tripRequest.getCreatedAt();
+
+        entity.updatedAt =
+                tripRequest.getUpdatedAt();
+
+        /*
+         * IMPORTANT:
+         *
+         * Do NOT set entity.version here.
+         *
+         * Hibernate manages @Version.
+         */
         return entity;
+    }
+
+    public void updateFrom(TripRequest tripRequest) {
+
+        this.touristId =
+                tripRequest.getTouristId().value();
+
+        this.status =
+                tripRequest.getStatus().name();
+
+        this.startDate =
+                tripRequest.getTravelDateRange().startDate();
+
+        this.endDate =
+                tripRequest.getTravelDateRange().endDate();
+
+        this.passengerCount =
+                tripRequest.getPassengerCount().value();
+
+        this.tripBrief =
+                tripRequest.getTripBrief().value();
+
+        Location pickup =
+                tripRequest.getItinerary().pickup();
+
+        this.pickupDescription =
+                pickup.description();
+
+        this.pickupLatitude =
+                pickup.latitude();
+
+        this.pickupLongitude =
+                pickup.longitude();
+
+        Location destination =
+                tripRequest.getItinerary().destination();
+
+        this.destinationDescription =
+                destination.description();
+
+        this.destinationLatitude =
+                destination.latitude();
+
+        this.destinationLongitude =
+                destination.longitude();
+
+        this.updatedAt =
+                tripRequest.getUpdatedAt();
+
+        /*
+         * Do NOT modify version.
+         *
+         * Hibernate will increment it automatically.
+         */
     }
 
     public UUID getId() {

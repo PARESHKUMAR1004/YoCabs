@@ -2,6 +2,9 @@ package com.yocabs.api.modules.triprequest.presentation.controller;
 
 import com.yocabs.api.modules.triprequest.application.command.CreateTripRequestCommand;
 import com.yocabs.api.modules.triprequest.application.service.CreateTripRequestService;
+import com.yocabs.api.modules.triprequest.application.service.GetTripRequestService;
+import com.yocabs.api.modules.triprequest.application.service.SubmitTripRequestService;
+import com.yocabs.api.modules.triprequest.presentation.dto.TripRequestResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,12 +17,19 @@ import java.util.UUID;
 public class TripRequestController {
 
     private final CreateTripRequestService createTripRequestService;
+    private final GetTripRequestService getTripRequestService;
+    private final SubmitTripRequestService submitTripRequestService;
 
     public TripRequestController(
-            CreateTripRequestService createTripRequestService
+            CreateTripRequestService createTripRequestService,
+            GetTripRequestService getTripRequestService,
+            SubmitTripRequestService submitTripRequestService
     ) {
         this.createTripRequestService = createTripRequestService;
+        this.getTripRequestService = getTripRequestService;
+        this.submitTripRequestService = submitTripRequestService;
     }
+
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -44,6 +54,25 @@ public class TripRequestController {
 
         return tripRequest.getId().value();
     }
+
+    @GetMapping("/{id}")
+    public TripRequestResponse getById(
+            @PathVariable UUID id
+    ) {
+        return TripRequestResponse.from(
+                getTripRequestService.execute(id)
+        );
+    }
+
+    @PostMapping("/{id}/submit")
+    public TripRequestResponse submit(
+            @PathVariable UUID id
+    ) {
+        return TripRequestResponse.from(
+                submitTripRequestService.execute(id)
+        );
+    }
+
 
     public record CreateTripRequestRequest(
             UUID touristId,

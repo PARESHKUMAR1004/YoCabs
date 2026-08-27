@@ -54,11 +54,12 @@ public class CreateTripRequestService {
                         ))
                         .toList();
 
-        Itinerary itinerary = new Itinerary(
-                pickup,
-                stops,
-                destination
-        );
+        Itinerary itinerary =
+                new Itinerary(
+                        pickup,
+                        stops,
+                        destination
+                );
 
         TravelDateRange travelDateRange =
                 new TravelDateRange(
@@ -85,6 +86,8 @@ public class CreateTripRequestService {
                         tripBrief
                 );
 
-        return tripRequestRepository.save(tripRequest);
+        return tripRequestRepository.create(
+                tripRequest
+        );
     }
 }

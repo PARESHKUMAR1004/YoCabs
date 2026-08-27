@@ -1,0 +1,2 @@
+### List Vehicles
+GET http://localhost:8080/api/v1/travel-partners/1b55c9df-7c01-47c7-84c4-fd4ac7337021/vehicles

@@ -1,6 +1,11 @@
 package com.yocabs.api.modules.triprequest.domain.model;
 
-import com.yocabs.api.modules.triprequest.domain.valueobject.*;
+import com.yocabs.api.modules.triprequest.domain.valueobject.Itinerary;
+import com.yocabs.api.modules.triprequest.domain.valueobject.PassengerCount;
+import com.yocabs.api.modules.triprequest.domain.valueobject.TravelDateRange;
+import com.yocabs.api.modules.triprequest.domain.valueobject.TripBrief;
+import com.yocabs.api.modules.triprequest.domain.valueobject.TripRequestId;
+import com.yocabs.api.modules.triprequest.domain.valueobject.TouristId;
 
 import java.time.Instant;
 
@@ -13,7 +18,7 @@ public class TripRequest {
     private TravelDateRange travelDateRange;
     private PassengerCount passengerCount;
     private TripBrief tripBrief;
-
+    private TripType tripType;
     private TripRequestStatus status;
     private long version;
 
@@ -26,7 +31,11 @@ public class TripRequest {
             Itinerary itinerary,
             TravelDateRange travelDateRange,
             PassengerCount passengerCount,
-            TripBrief tripBrief
+            TripBrief tripBrief,
+            TripRequestStatus status,
+            long version,
+            Instant createdAt,
+            Instant updatedAt
     ) {
         this.id = id;
         this.touristId = touristId;
@@ -34,12 +43,10 @@ public class TripRequest {
         this.travelDateRange = travelDateRange;
         this.passengerCount = passengerCount;
         this.tripBrief = tripBrief;
-
-        this.status = TripRequestStatus.DRAFT;
-        this.version = 0L;
-
-        this.createdAt = Instant.now();
-        this.updatedAt = this.createdAt;
+        this.status = status;
+        this.version = version;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
     public static TripRequest create(
@@ -49,13 +56,45 @@ public class TripRequest {
             PassengerCount passengerCount,
             TripBrief tripBrief
     ) {
+        Instant now = Instant.now();
+
         return new TripRequest(
                 TripRequestId.generate(),
                 touristId,
                 itinerary,
                 travelDateRange,
                 passengerCount,
-                tripBrief
+                tripBrief,
+                TripRequestStatus.DRAFT,
+                0L,
+                now,
+                now
+        );
+    }
+
+    public static TripRequest reconstitute(
+            TripRequestId id,
+            TouristId touristId,
+            Itinerary itinerary,
+            TravelDateRange travelDateRange,
+            PassengerCount passengerCount,
+            TripBrief tripBrief,
+            TripRequestStatus status,
+            long version,
+            Instant createdAt,
+            Instant updatedAt
+    ) {
+        return new TripRequest(
+                id,
+                touristId,
+                itinerary,
+                travelDateRange,
+                passengerCount,
+                tripBrief,
+                status,
+                version,
+                createdAt,
+                updatedAt
         );
     }
 

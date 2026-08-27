@@ -1,0 +1,17 @@
+### Create Round-Trip Pricing
+POST http://localhost:8080/api/v1/pricing-configurations
+Content-Type: application/json
+
+{
+  "vehicleId": "9a6f3040-44c5-4cd6-9abe-7510a71ed278",
+  "tripType": "CHAUFFEUR_ROUND_TRIP",
+  "baseFee": 800,
+  "perKmCharge": 16,
+  "driverAllowance": 500,
+  "minimumBillableKm": 100,
+  "includedDurationMinutes": null,
+  "includedDistanceKm": null,
+  "packagePrice": null,
+  "extraHourCharge": null,
+  "extraKmCharge": null
+}

@@ -7,7 +7,9 @@ import java.util.Optional;
 
 public interface TripRequestRepository {
 
-    TripRequest save(TripRequest tripRequest);
+    TripRequest create(TripRequest tripRequest);
+
+    TripRequest update(TripRequest tripRequest);
 
     Optional<TripRequest> findById(TripRequestId id);
 }

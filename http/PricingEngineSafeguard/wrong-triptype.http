@@ -1,0 +1,12 @@
+### Wrong Trip Type
+POST http://localhost:8080/api/v1/pricing/calculate
+Content-Type: application/json
+
+{
+  "vehicleId": "9c43b88b-cc2b-4db4-9ef7-fdfa43ee04be",
+  "tripType": "CHAUFFEUR_ROUND_TRIP",
+  "distanceKm": 100,
+  "durationMinutes": null,
+  "startTime": null,
+  "endTime": null
+}

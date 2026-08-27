@@ -1,0 +1,17 @@
+### Create Pricing
+POST http://localhost:8080/api/v1/pricing-configurations
+Content-Type: application/json
+
+{
+  "vehicleId": "d403ccd6-4cc9-4cd8-8ca2-170e37c4632a",
+  "tripType": "CHAUFFEUR_ONE_WAY",
+  "baseFee": 700,
+  "perKmCharge": 30,
+  "driverAllowance": 350,
+  "minimumBillableKm": 50,
+  "includedDurationMinutes": null,
+  "includedDistanceKm": null,
+  "packagePrice": null,
+  "extraHourCharge": null,
+  "extraKmCharge": null
+}
