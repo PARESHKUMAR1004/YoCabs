@@ -6,6 +6,7 @@ import com.yocabs.api.modules.triprequest.domain.valueobject.TravelDateRange;
 import com.yocabs.api.modules.triprequest.domain.valueobject.TripBrief;
 import com.yocabs.api.modules.triprequest.domain.valueobject.TripRequestId;
 import com.yocabs.api.modules.triprequest.domain.valueobject.TouristId;
+import com.yocabs.api.modules.vehicle.domain.model.VehicleCategory;
 
 import java.time.Instant;
 
@@ -18,7 +19,17 @@ public class TripRequest {
     private TravelDateRange travelDateRange;
     private PassengerCount passengerCount;
     private TripBrief tripBrief;
+
+    /*
+     * Optional trip-type preference.
+     *
+     * null means the tourist has not selected
+     * a specific trip type and is open to all
+     * applicable pricing options.
+     */
     private TripType tripType;
+    private VehicleCategory vehicleCategory;
+
     private TripRequestStatus status;
     private long version;
 
@@ -32,6 +43,8 @@ public class TripRequest {
             TravelDateRange travelDateRange,
             PassengerCount passengerCount,
             TripBrief tripBrief,
+            TripType tripType,
+            VehicleCategory vehicleCategory,
             TripRequestStatus status,
             long version,
             Instant createdAt,
@@ -43,6 +56,8 @@ public class TripRequest {
         this.travelDateRange = travelDateRange;
         this.passengerCount = passengerCount;
         this.tripBrief = tripBrief;
+        this.tripType = tripType;
+        this.vehicleCategory = vehicleCategory;
         this.status = status;
         this.version = version;
         this.createdAt = createdAt;
@@ -54,8 +69,11 @@ public class TripRequest {
             Itinerary itinerary,
             TravelDateRange travelDateRange,
             PassengerCount passengerCount,
-            TripBrief tripBrief
+            TripBrief tripBrief,
+            TripType tripType,
+            VehicleCategory vehicleCategory
     ) {
+
         Instant now = Instant.now();
 
         return new TripRequest(
@@ -65,6 +83,8 @@ public class TripRequest {
                 travelDateRange,
                 passengerCount,
                 tripBrief,
+                tripType,
+                vehicleCategory,
                 TripRequestStatus.DRAFT,
                 0L,
                 now,
@@ -79,6 +99,8 @@ public class TripRequest {
             TravelDateRange travelDateRange,
             PassengerCount passengerCount,
             TripBrief tripBrief,
+            TripType tripType,
+            VehicleCategory vehicleCategory,
             TripRequestStatus status,
             long version,
             Instant createdAt,
@@ -91,6 +113,8 @@ public class TripRequest {
                 travelDateRange,
                 passengerCount,
                 tripBrief,
+                tripType,
+                vehicleCategory,
                 status,
                 version,
                 createdAt,
@@ -99,6 +123,7 @@ public class TripRequest {
     }
 
     public void submit() {
+
         if (status != TripRequestStatus.DRAFT) {
             throw new IllegalStateException(
                     "Only a draft trip request can be submitted"
@@ -110,6 +135,7 @@ public class TripRequest {
     }
 
     public void cancel() {
+
         if (status == TripRequestStatus.CANCELLED) {
             throw new IllegalStateException(
                     "Trip request is already cancelled"
@@ -120,7 +146,10 @@ public class TripRequest {
         touch();
     }
 
-    public void updateTripBrief(TripBrief tripBrief) {
+    public void updateTripBrief(
+            TripBrief tripBrief
+    ) {
+
         if (status != TripRequestStatus.DRAFT) {
             throw new IllegalStateException(
                     "Trip brief can only be changed while the trip request is a draft"
@@ -152,12 +181,24 @@ public class TripRequest {
         return travelDateRange;
     }
 
+    public VehicleCategory getVehicleCategory() {
+        return vehicleCategory;
+    }
+
+    public void setVehicleCategory(VehicleCategory vehicleCategory) {
+        this.vehicleCategory = vehicleCategory;
+    }
+
     public PassengerCount getPassengerCount() {
         return passengerCount;
     }
 
     public TripBrief getTripBrief() {
         return tripBrief;
+    }
+
+    public TripType getTripType() {
+        return tripType;
     }
 
     public TripRequestStatus getStatus() {

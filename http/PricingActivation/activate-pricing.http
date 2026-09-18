@@ -1,2 +1,2 @@
 ### Activate Rental Pricing
-PATCH http://localhost:8080/api/v1/pricing-configurations/d0a65a62-4127-4053-9a5d-6d6003d3ba30/activate
+PATCH http://localhost:8080/api/v1/pricing-configurations/6a5c116e-0e22-4775-b753-d94f66b36c7d/activate

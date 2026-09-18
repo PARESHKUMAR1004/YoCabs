@@ -83,7 +83,9 @@ public class CreateTripRequestService {
                         itinerary,
                         travelDateRange,
                         passengerCount,
-                        tripBrief
+                        tripBrief,
+                        command.tripType(),
+                        command.vehicleCategory()
                 );
 
         return tripRequestRepository.create(

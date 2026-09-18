@@ -3,7 +3,7 @@ POST http://localhost:8080/api/v1/pricing-configurations
 Content-Type: application/json
 
 {
-  "vehicleId": "9a6f3040-44c5-4cd6-9abe-7510a71ed278",
+  "vehicleId": "2b6ea1ef-219d-452b-9e53-f4c98e3b9868",
   "tripType": "CHAUFFEUR_RENTAL",
   "baseFee": null,
   "perKmCharge": null,

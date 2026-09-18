@@ -4,7 +4,9 @@ import com.yocabs.api.modules.triprequest.application.command.CreateTripRequestC
 import com.yocabs.api.modules.triprequest.application.service.CreateTripRequestService;
 import com.yocabs.api.modules.triprequest.application.service.GetTripRequestService;
 import com.yocabs.api.modules.triprequest.application.service.SubmitTripRequestService;
+import com.yocabs.api.modules.triprequest.domain.model.TripType;
 import com.yocabs.api.modules.triprequest.presentation.dto.TripRequestResponse;
+import com.yocabs.api.modules.vehicle.domain.model.VehicleCategory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,7 +49,10 @@ public class TripRequestController {
                 request.startDate(),
                 request.endDate(),
                 request.passengerCount(),
-                request.tripBrief()
+                request.tripBrief(),
+                request.tripType(),
+                request.vehicleCategory()
+
         );
 
         var tripRequest = createTripRequestService.execute(command);
@@ -86,7 +91,9 @@ public class TripRequestController {
             LocalDate startDate,
             LocalDate endDate,
             int passengerCount,
-            String tripBrief
+            String tripBrief,
+            TripType tripType,
+            VehicleCategory vehicleCategory
     ) {
     }
 }

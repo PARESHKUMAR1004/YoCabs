@@ -183,6 +183,8 @@ public class TripRequestRepositoryAdapter
                 new TripBrief(
                         entity.getTripBrief()
                 ),
+                entity.getTripType(),
+                entity.getVehicleCategory(),
                 TripRequestStatus.valueOf(
                         entity.getStatus()
                 ),

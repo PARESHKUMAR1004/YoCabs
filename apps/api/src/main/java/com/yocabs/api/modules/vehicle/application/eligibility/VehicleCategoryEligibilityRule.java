@@ -2,8 +2,10 @@ package com.yocabs.api.modules.vehicle.application.eligibility;
 
 import com.yocabs.api.modules.tripsearch.domain.TripSearchCriteria;
 import com.yocabs.api.modules.vehicle.domain.model.Vehicle;
+import org.springframework.stereotype.Component;
 
-public class PassengerCapacityEligibilityRule
+@Component
+public class VehicleCategoryEligibilityRule
         implements VehicleEligibilityRule {
 
     @Override
@@ -12,7 +14,11 @@ public class PassengerCapacityEligibilityRule
             TripSearchCriteria criteria
     ) {
 
-        return vehicle.getPassengerCapacity()
-                >= criteria.passengerCount();
+        if (criteria.vehicleCategory() == null) {
+            return true;
+        }
+
+        return vehicle.getCategory()
+                == criteria.vehicleCategory();
     }
 }

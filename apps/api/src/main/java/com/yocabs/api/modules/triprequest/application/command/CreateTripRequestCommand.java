@@ -1,5 +1,8 @@
 package com.yocabs.api.modules.triprequest.application.command;
 
+import com.yocabs.api.modules.triprequest.domain.model.TripType;
+import com.yocabs.api.modules.vehicle.domain.model.VehicleCategory;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -16,7 +19,9 @@ public record CreateTripRequestCommand(
         LocalDate startDate,
         LocalDate endDate,
         int passengerCount,
-        String tripBrief
+        String tripBrief,
+        TripType tripType,
+        VehicleCategory vehicleCategory
 ) {
 
     public record LocationCommand(

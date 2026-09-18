@@ -3,6 +3,7 @@ package com.yocabs.api.modules.travelpartner.application.service;
 import com.yocabs.api.modules.travelpartner.application.model.EligibleTravelPartner;
 import com.yocabs.api.modules.travelpartner.domain.model.TravelPartner;
 import com.yocabs.api.modules.triprequest.domain.model.TripRequest;
+import com.yocabs.api.modules.tripsearch.domain.TripSearchCriteria;
 import com.yocabs.api.modules.vehicle.application.eligibility.VehicleEligibilityRule;
 import com.yocabs.api.modules.vehicle.domain.model.Vehicle;
 import com.yocabs.api.modules.vehicle.domain.repository.VehicleRepository;
@@ -39,13 +40,13 @@ public class TripEligibilityService {
     }
 
     public List<EligibleTravelPartner> findEligibleOptions(
-            TripRequest tripRequest,
+            TripSearchCriteria criteria,
             List<TravelPartner> candidates
     ) {
 
-        if (tripRequest == null) {
+        if (criteria == null) {
             throw new IllegalArgumentException(
-                    "Trip request is required"
+                    "Trip search criteria is required"
             );
         }
 
@@ -58,7 +59,7 @@ public class TripEligibilityService {
         List<TravelPartner> eligiblePartners =
                 travelPartnerEligibilityService
                         .findEligiblePartners(
-                                tripRequest,
+                                criteria,
                                 candidates
                         );
 
@@ -66,7 +67,7 @@ public class TripEligibilityService {
                 .map(partner ->
                         createEligiblePartner(
                                 partner,
-                                tripRequest
+                                criteria
                         )
                 )
                 .filter(result ->
@@ -75,9 +76,36 @@ public class TripEligibilityService {
                 .toList();
     }
 
+
+
+    public List<EligibleTravelPartner> findEligibleOptions(
+            TripRequest tripRequest,
+            List<TravelPartner> candidates
+    ) {
+
+        if (tripRequest == null) {
+            throw new IllegalArgumentException(
+                    "Trip request is required"
+            );
+        }
+
+        TripSearchCriteria criteria =
+                new TripSearchCriteria(
+                        tripRequest.getItinerary(),
+                        tripRequest.getPassengerCount().value(),
+                        tripRequest.getVehicleCategory(),
+                        tripRequest.getTripType()
+                );
+
+        return findEligibleOptions(
+                criteria,
+                candidates
+        );
+    }
+
     private EligibleTravelPartner createEligiblePartner(
             TravelPartner travelPartner,
-            TripRequest tripRequest
+            TripSearchCriteria criteria
     ) {
 
         List<Vehicle> vehicles =
@@ -94,7 +122,7 @@ public class TripEligibilityService {
                                         .allMatch(rule ->
                                                 rule.isEligible(
                                                         vehicle,
-                                                        tripRequest
+                                                        criteria
                                                 )
                                         )
                         )

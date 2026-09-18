@@ -1,9 +1,14 @@
 package com.yocabs.api.modules.triprequest.infrastructure.persistence;
 
 import com.yocabs.api.modules.triprequest.domain.model.TripRequest;
+import com.yocabs.api.modules.triprequest.domain.model.TripRequestStatus;
+import com.yocabs.api.modules.triprequest.domain.model.TripType;
 import com.yocabs.api.modules.triprequest.domain.valueobject.Location;
+import com.yocabs.api.modules.vehicle.domain.model.VehicleCategory;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
@@ -24,6 +29,14 @@ public class TripRequestEntity {
 
     @Column(nullable = false, length = 30)
     private String status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "trip_type", length = 50)
+    private TripType tripType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "vehicle_category", length = 30)
+    private VehicleCategory vehicleCategory;
 
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
@@ -69,28 +82,59 @@ public class TripRequestEntity {
         // Required by JPA
     }
 
-    public static TripRequestEntity from(TripRequest tripRequest) {
-        TripRequestEntity entity = new TripRequestEntity();
+    public static TripRequestEntity from(
+            TripRequest tripRequest
+    ) {
 
-        entity.id = tripRequest.getId().value();
-        entity.touristId = tripRequest.getTouristId().value();
+        TripRequestEntity entity =
+                new TripRequestEntity();
 
-        entity.status = tripRequest.getStatus().name();
+        entity.id =
+                tripRequest
+                        .getId()
+                        .value();
+
+        entity.touristId =
+                tripRequest
+                        .getTouristId()
+                        .value();
+
+        entity.status =
+                tripRequest
+                        .getStatus()
+                        .name();
+
+        entity.tripType =
+                tripRequest
+                        .getTripType();
+
+        entity.vehicleCategory =
+                tripRequest.getVehicleCategory();
 
         entity.startDate =
-                tripRequest.getTravelDateRange().startDate();
+                tripRequest
+                        .getTravelDateRange()
+                        .startDate();
 
         entity.endDate =
-                tripRequest.getTravelDateRange().endDate();
+                tripRequest
+                        .getTravelDateRange()
+                        .endDate();
 
         entity.passengerCount =
-                tripRequest.getPassengerCount().value();
+                tripRequest
+                        .getPassengerCount()
+                        .value();
 
         entity.tripBrief =
-                tripRequest.getTripBrief().value();
+                tripRequest
+                        .getTripBrief()
+                        .value();
 
         Location pickup =
-                tripRequest.getItinerary().pickup();
+                tripRequest
+                        .getItinerary()
+                        .pickup();
 
         entity.pickupDescription =
                 pickup.description();
@@ -102,7 +146,9 @@ public class TripRequestEntity {
                 pickup.longitude();
 
         Location destination =
-                tripRequest.getItinerary().destination();
+                tripRequest
+                        .getItinerary()
+                        .destination();
 
         entity.destinationDescription =
                 destination.description();
@@ -114,10 +160,12 @@ public class TripRequestEntity {
                 destination.longitude();
 
         entity.createdAt =
-                tripRequest.getCreatedAt();
+                tripRequest
+                        .getCreatedAt();
 
         entity.updatedAt =
-                tripRequest.getUpdatedAt();
+                tripRequest
+                        .getUpdatedAt();
 
         /*
          * IMPORTANT:
@@ -126,31 +174,55 @@ public class TripRequestEntity {
          *
          * Hibernate manages @Version.
          */
+
         return entity;
     }
 
-    public void updateFrom(TripRequest tripRequest) {
+    public void updateFrom(
+            TripRequest tripRequest
+    ) {
 
         this.touristId =
-                tripRequest.getTouristId().value();
+                tripRequest
+                        .getTouristId()
+                        .value();
 
         this.status =
-                tripRequest.getStatus().name();
+                tripRequest
+                        .getStatus()
+                        .name();
+
+        this.tripType =
+                tripRequest
+                        .getTripType();
+
+        this.vehicleCategory =
+                tripRequest.getVehicleCategory();
 
         this.startDate =
-                tripRequest.getTravelDateRange().startDate();
+                tripRequest
+                        .getTravelDateRange()
+                        .startDate();
 
         this.endDate =
-                tripRequest.getTravelDateRange().endDate();
+                tripRequest
+                        .getTravelDateRange()
+                        .endDate();
 
         this.passengerCount =
-                tripRequest.getPassengerCount().value();
+                tripRequest
+                        .getPassengerCount()
+                        .value();
 
         this.tripBrief =
-                tripRequest.getTripBrief().value();
+                tripRequest
+                        .getTripBrief()
+                        .value();
 
         Location pickup =
-                tripRequest.getItinerary().pickup();
+                tripRequest
+                        .getItinerary()
+                        .pickup();
 
         this.pickupDescription =
                 pickup.description();
@@ -162,7 +234,9 @@ public class TripRequestEntity {
                 pickup.longitude();
 
         Location destination =
-                tripRequest.getItinerary().destination();
+                tripRequest
+                        .getItinerary()
+                        .destination();
 
         this.destinationDescription =
                 destination.description();
@@ -174,7 +248,8 @@ public class TripRequestEntity {
                 destination.longitude();
 
         this.updatedAt =
-                tripRequest.getUpdatedAt();
+                tripRequest
+                        .getUpdatedAt();
 
         /*
          * Do NOT modify version.
@@ -193,6 +268,13 @@ public class TripRequestEntity {
 
     public String getStatus() {
         return status;
+    }
+
+    public TripType getTripType() {
+        return tripType;
+    }
+    public VehicleCategory getVehicleCategory() {
+        return vehicleCategory;
     }
 
     public LocalDate getStartDate() {

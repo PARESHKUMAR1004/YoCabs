@@ -1,6 +1,8 @@
 package com.yocabs.api.modules.triprequest.presentation.dto;
 
 import com.yocabs.api.modules.triprequest.domain.model.TripRequest;
+import com.yocabs.api.modules.triprequest.domain.model.TripType;
+import com.yocabs.api.modules.vehicle.domain.model.VehicleCategory;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -15,6 +17,8 @@ public record TripRequestResponse(
         LocalDate endDate,
         int passengerCount,
         String tripBrief,
+        TripType tripType,
+        VehicleCategory vehicleCategory,
         LocationResponse pickup,
         List<LocationResponse> stops,
         LocationResponse destination,
@@ -34,6 +38,8 @@ public record TripRequestResponse(
                 tripRequest.getTravelDateRange().endDate(),
                 tripRequest.getPassengerCount().value(),
                 tripRequest.getTripBrief().value(),
+                tripRequest.getTripType(),
+                tripRequest.getVehicleCategory(),
                 LocationResponse.from(
                         tripRequest.getItinerary().pickup()
                 ),
