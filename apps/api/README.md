@@ -30,7 +30,7 @@ Request files for every endpoint live in [`/http`](../../http); start with `http
 | `tripsearch` | `POST /trip-search`, and re-validation of a selected option at action time |
 | `triprequest` | Persisted tourist trip request (created only when the tourist commits) |
 | `negotiation` | One offer, one counter, accept/reject, configurable expiry |
-| `booking` | Booking with price snapshot, 5% token, hold expiry, double-booking protection, cancellation/refund policy, driver assignment, trip start/complete |
+| `booking` | Booking with price snapshot, 25% token, hold expiry, double-booking protection, cancellation/refund policy, driver assignment, trip start/complete |
 | `payment` | Gateway port, signed idempotent webhooks, append-only transaction ledger, refunds |
 | `driver`, `document` | Drivers; private document storage with admin verification |
 | `review` | One review per completed booking; partner rating |
@@ -115,7 +115,7 @@ Known limits of the hosted setup:
 
 These are explicit, isolated, configurable rules:
 
-1. **Settlement model.** YoCabs collects the 5% token; the partner collects the rest. On trip completion the ledger
+1. **Settlement model.** YoCabs collects the 25% token; the partner collects the rest. On trip completion the ledger
    nets `token - commission`: a surplus is owed to the partner, a shortfall is owed *by* the partner
    (`SettlementService.onBookingCompleted` is the only place to change this).
 2. **Cancellation/refund policy.** Partner/admin cancellations always refund the token; a tourist is refunded up to

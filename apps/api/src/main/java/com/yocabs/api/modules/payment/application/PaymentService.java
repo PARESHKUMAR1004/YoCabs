@@ -45,7 +45,7 @@ public class PaymentService {
         this.events = events;
     }
 
-    /** Starts (or resumes) the 5% token payment for a booking awaiting payment. */
+    /** Starts (or resumes) the token payment for a booking awaiting payment. */
     @Transactional
     public Payment initiate(Actor actor, UUID bookingId) {
 

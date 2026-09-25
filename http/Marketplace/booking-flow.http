@@ -75,7 +75,7 @@ Content-Type: application/json
   "negotiationId": "{{negotiationId}}"
 }
 
-### 5. Start the 5% token payment
+### 5. Start the 25% token payment
 POST {{base}}/bookings/{{bookingId}}/payments
 Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
 

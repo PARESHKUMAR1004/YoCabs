@@ -68,8 +68,8 @@ class ReportsAndFinanceIntegrationTest extends MarketplaceFixtures {
         assertEquals(0, commission.compareTo(decimal(report, "$.commission")));
         assertEquals(0, s.completedTotal().subtract(commission).compareTo(decimal(report, "$.partnerEarnings")));
 
-        // Token (5%) < commission (10%): the ledger shows what the partner owes.
-        assertTrue(decimal(report, "$.walletBalance").signum() < 0);
+        // Token (25%) > commission (10%): the ledger shows what YoCabs owes the partner.
+        assertTrue(decimal(report, "$.walletBalance").signum() > 0);
         assertTrue(((List<?>) json(report, "$.months")).size() >= 1);
 
         // Money figures are for the owner (and admins), not for staff or other partners.

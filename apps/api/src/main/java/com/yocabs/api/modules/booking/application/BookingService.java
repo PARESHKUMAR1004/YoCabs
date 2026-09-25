@@ -54,7 +54,7 @@ public class BookingService {
             SelectedOptionService selectedOptionService,
             NegotiationService negotiationService,
             ApplicationEventPublisher events,
-            @Value("${yocabs.booking.token-percentage:5}") BigDecimal tokenPercentage,
+            @Value("${yocabs.booking.token-percentage:25}") BigDecimal tokenPercentage,
             @Value("${yocabs.booking.commission-percentage:10}") BigDecimal commissionPercentage,
             @Value("${yocabs.booking.hold-minutes:15}") long holdMinutes
     ) {

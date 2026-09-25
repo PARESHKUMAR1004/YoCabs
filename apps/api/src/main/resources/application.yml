@@ -89,7 +89,7 @@ yocabs:
       timeout-ms: 5000
 
   booking:
-    token-percentage: 5
+    token-percentage: 25
     commission-percentage: 10
     hold-minutes: 15
     free-cancellation-hours: 24

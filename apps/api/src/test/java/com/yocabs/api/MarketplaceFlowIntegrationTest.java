@@ -102,7 +102,7 @@ class MarketplaceFlowIntegrationTest extends MarketplaceFixtures {
         assertEquals("PENDING_PAYMENT", json(booking, "$.status"));
         assertEquals(0, counter.compareTo(decimal(booking, "$.totalAmount")));
         assertEquals(0,
-                counter.multiply(new BigDecimal("0.05")).setScale(2, RoundingMode.HALF_UP)
+                counter.multiply(new BigDecimal("0.25")).setScale(2, RoundingMode.HALF_UP)
                         .compareTo(decimal(booking, "$.tokenAmount")));
 
         UUID bookingId = UUID.fromString(json(booking, "$.id"));
@@ -174,13 +174,13 @@ class MarketplaceFlowIntegrationTest extends MarketplaceFixtures {
         MvcResult rating = get("/api/v1/travel-partners/" + partner.id() + "/rating", tourist);
         assertEquals(1, (int) json(rating, "$.reviewCount"));
 
-        // Token (5%) < commission (10%): the partner owes the difference.
+        // Token (25%) > commission (10%): YoCabs owes the partner the difference.
         MvcResult wallet = get("/api/v1/travel-partners/" + partner.id() + "/wallet", partner.ownerToken());
         BigDecimal expected =
-                counter.multiply(new BigDecimal("0.05")).setScale(2, RoundingMode.HALF_UP)
+                counter.multiply(new BigDecimal("0.25")).setScale(2, RoundingMode.HALF_UP)
                         .subtract(counter.multiply(new BigDecimal("0.10")).setScale(2, RoundingMode.HALF_UP));
         assertEquals(0, expected.compareTo(decimal(wallet, "$.balance")));
-        assertEquals("DEBIT", json(wallet, "$.entries[0].type"));
+        assertEquals("CREDIT", json(wallet, "$.entries[0].type"));
     }
 
     @Test

@@ -137,8 +137,8 @@ class AdminOperationsIntegrationTest extends MarketplaceFixtures {
         pay(tourist, booking);
         completeTrip(partner, driver, booking);
 
-        // Token 5% - commission 2% = 3% of the fare is owed to the partner.
-        BigDecimal token = total.multiply(new BigDecimal("0.05")).setScale(2, RoundingMode.HALF_UP);
+        // Token 25% - commission 2% = 23% of the fare is owed to the partner.
+        BigDecimal token = total.multiply(new BigDecimal("0.25")).setScale(2, RoundingMode.HALF_UP);
         BigDecimal commission = total.multiply(new BigDecimal("0.02")).setScale(2, RoundingMode.HALF_UP);
         BigDecimal surplus = token.subtract(commission);
 
