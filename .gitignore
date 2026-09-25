@@ -1,0 +1,11 @@
+# Editor and machine-local config
+.idea/
+.vscode/
+
+# Archives and exports that live next to the code
+*.zip
+
+# Local secrets
+.env
+.env.*
+!.env.example

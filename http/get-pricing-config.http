@@ -1,2 +1,3 @@
 ### Get Pricing Configuration
 GET http://localhost:8080/api/v1/pricing-configurations/aca24524-d577-44b3-b2ea-51b90666c241
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}

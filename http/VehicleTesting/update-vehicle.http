@@ -1,5 +1,6 @@
 ### Update Vehicle
 PUT http://localhost:8080/api/v1/travel-partners/1b55c9df-7c01-47c7-84c4-fd4ac7337021/vehicles/9a6f3040-44c5-4cd6-9abe-7510a71ed278
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
 Content-Type: application/json
 
 {

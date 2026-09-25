@@ -12,6 +12,44 @@ services:
       - "5432:5432"
     volumes:
       - yocabs-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yocabs -d yocabs"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Optional: run the API in a container. Build the jar first:
+  #   (cd apps/api && ./gradlew bootJar)
+  #   docker compose --profile api up --build
+  # Defaults to the local/dev profile (sandbox payments, OTP printed to the log).
+  # For production set YOCABS_PROFILE=prod and provide real secrets plus the
+  # SMS / payment-gateway adapters (the prod profile refuses the sandbox ones).
+  api:
+    profiles: ["api"]
+    build: ../../apps/api
+    container_name: yocabs-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${YOCABS_PROFILE:-dev}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/yocabs
+      SPRING_DATASOURCE_USERNAME: yocabs
+      SPRING_DATASOURCE_PASSWORD: yocabs_dev
+      DB_URL: jdbc:postgresql://postgres:5432/yocabs
+      DB_USER: yocabs
+      DB_PASSWORD: yocabs_dev
+      YOCABS_JWT_SECRET: ${YOCABS_JWT_SECRET:-dev-only-secret-change-me-please-32-bytes-minimum}
+      YOCABS_BOOTSTRAP_ADMIN_EMAIL: ${YOCABS_BOOTSTRAP_ADMIN_EMAIL:-}
+      YOCABS_BOOTSTRAP_ADMIN_PASSWORD: ${YOCABS_BOOTSTRAP_ADMIN_PASSWORD:-}
+      YOCABS_PAYMENT_GATEWAY: ${YOCABS_PAYMENT_GATEWAY:-sandbox}
+      YOCABS_PAYMENT_WEBHOOK_SECRET: ${YOCABS_PAYMENT_WEBHOOK_SECRET:-sandbox-webhook-secret-change-me}
+      YOCABS_OSRM_BASE_URL: ${YOCABS_OSRM_BASE_URL:-https://router.project-osrm.org}
+    ports:
+      - "8080:8080"
+    volumes:
+      - yocabs-documents:/var/lib/yocabs/documents
 
 volumes:
   yocabs-postgres-data:
+  yocabs-documents:

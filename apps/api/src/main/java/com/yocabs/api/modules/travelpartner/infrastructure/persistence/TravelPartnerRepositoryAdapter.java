@@ -3,7 +3,6 @@ package com.yocabs.api.modules.travelpartner.infrastructure.persistence;
 import com.yocabs.api.modules.travelpartner.domain.model.TravelPartner;
 import com.yocabs.api.modules.travelpartner.domain.model.TravelPartnerStatus;
 import com.yocabs.api.modules.travelpartner.domain.repository.TravelPartnerRepository;
-import com.yocabs.api.modules.travelpartner.domain.valueobject.ServiceArea;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,18 +17,12 @@ public class TravelPartnerRepositoryAdapter
     private final TravelPartnerJpaRepository
             travelPartnerJpaRepository;
 
-    private final ServiceAreaJpaRepository
-            serviceAreaJpaRepository;
-
     public TravelPartnerRepositoryAdapter(
-            TravelPartnerJpaRepository travelPartnerJpaRepository,
-            ServiceAreaJpaRepository serviceAreaJpaRepository
+            TravelPartnerJpaRepository travelPartnerJpaRepository
     ) {
         this.travelPartnerJpaRepository =
                 travelPartnerJpaRepository;
 
-        this.serviceAreaJpaRepository =
-                serviceAreaJpaRepository;
     }
 
     @Override
@@ -46,9 +39,7 @@ public class TravelPartnerRepositoryAdapter
         TravelPartnerEntity saved =
                 travelPartnerJpaRepository.save(entity);
 
-        saveServiceAreas(travelPartner);
-
-        return toDomain(saved);
+        return saved.toDomain();
     }
 
     @Override
@@ -71,11 +62,7 @@ public class TravelPartnerRepositoryAdapter
                 travelPartner
         );
 
-        synchronizeServiceAreas(
-                travelPartner
-        );
-
-        return toDomain(entity);
+        return entity.toDomain();
     }
 
     @Override
@@ -86,7 +73,7 @@ public class TravelPartnerRepositoryAdapter
 
         return travelPartnerJpaRepository
                 .findById(id)
-                .map(this::toDomain);
+                .map(TravelPartnerEntity::toDomain);
     }
 
     @Override
@@ -98,101 +85,32 @@ public class TravelPartnerRepositoryAdapter
                         TravelPartnerStatus.ACTIVE
                 )
                 .stream()
-                .map(this::toDomain)
+                .map(TravelPartnerEntity::toDomain)
                 .toList();
     }
 
-    private void saveServiceAreas(
-            TravelPartner travelPartner
+    @Override
+    @Transactional(readOnly = true)
+    public List<TravelPartner> findByStatus(
+            TravelPartnerStatus status
     ) {
 
-        List<ServiceAreaEntity> entities =
-                travelPartner
-                        .getServiceAreas()
-                        .stream()
-                        .map(serviceArea ->
-                                ServiceAreaEntity.fromDomain(
-                                        travelPartner.getId(),
-                                        serviceArea
-                                )
-                        )
-                        .toList();
-
-        if (!entities.isEmpty()) {
-            serviceAreaJpaRepository.saveAll(
-                    entities
-            );
-        }
+        return travelPartnerJpaRepository
+                .findByStatus(status)
+                .stream()
+                .map(TravelPartnerEntity::toDomain)
+                .toList();
     }
 
-    private void synchronizeServiceAreas(
-            TravelPartner travelPartner
-    ) {
+    @Override
+    @Transactional(readOnly = true)
+    public List<TravelPartner> findAll() {
 
-        List<ServiceAreaEntity> existing =
-                serviceAreaJpaRepository
-                        .findByTravelPartnerId(
-                                travelPartner.getId()
-                        );
-
-        List<ServiceArea> current =
-                travelPartner.getServiceAreas();
-
-        /*
-         * Delete service areas removed from the
-         * domain aggregate.
-         */
-        for (ServiceAreaEntity existingArea : existing) {
-
-            boolean stillExists =
-                    current.stream()
-                            .anyMatch(serviceArea ->
-                                    serviceArea.id()
-                                            .equals(
-                                                    existingArea.getId()
-                                            )
-                            );
-
-            if (!stillExists) {
-                serviceAreaJpaRepository.delete(
-                        existingArea
-                );
-            }
-        }
-
-        /*
-         * Insert new service areas or update existing
-         * ones.
-         */
-        List<ServiceAreaEntity> entities =
-                current.stream()
-                        .map(serviceArea ->
-                                ServiceAreaEntity.fromDomain(
-                                        travelPartner.getId(),
-                                        serviceArea
-                                )
-                        )
-                        .toList();
-
-        if (!entities.isEmpty()) {
-            serviceAreaJpaRepository.saveAll(
-                    entities
-            );
-        }
+        return travelPartnerJpaRepository
+                .findAll()
+                .stream()
+                .map(TravelPartnerEntity::toDomain)
+                .toList();
     }
 
-    private TravelPartner toDomain(
-            TravelPartnerEntity entity
-    ) {
-
-        List<ServiceAreaEntity> serviceAreas =
-                serviceAreaJpaRepository
-                        .findByTravelPartnerId(
-                                entity.getId()
-                        );
-
-        return entity.toDomain(
-                serviceAreas
-        );
-    }
 }

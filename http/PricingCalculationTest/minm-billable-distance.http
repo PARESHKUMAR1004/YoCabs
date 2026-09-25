@@ -1,5 +1,6 @@
 ### Calculate One-Way Price - Minimum Distance
 POST http://localhost:8080/api/v1/pricing/calculate
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
 Content-Type: application/json
 
 {

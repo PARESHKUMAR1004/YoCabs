@@ -1,5 +1,6 @@
 ### Create Pricing
 POST http://localhost:8080/api/v1/pricing-configurations
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
 Content-Type: application/json
 
 {

@@ -1,0 +1,34 @@
+# Self-contained build for hosts that compile from source (Railway).
+# CI keeps using ./Dockerfile, which packages a jar built beforehand.
+#
+#   docker build -f Dockerfile.railway -t yocabs-api .
+
+FROM eclipse-temurin:21-jdk AS build
+WORKDIR /workspace
+
+# Wrapper and build scripts first, so dependency downloads are cached until they change.
+COPY gradlew gradlew.bat settings.gradle.kts build.gradle.kts ./
+COPY gradle gradle
+RUN chmod +x gradlew && ./gradlew --no-daemon dependencies > /dev/null 2>&1 || true
+
+COPY src src
+RUN ./gradlew --no-daemon bootJar -x test
+
+FROM eclipse-temurin:21-jre
+
+RUN groupadd --system yocabs && useradd --system --gid yocabs --uid 1001 yocabs \
+    && mkdir -p /var/lib/yocabs/documents \
+    && chown -R yocabs:yocabs /var/lib/yocabs
+
+WORKDIR /app
+COPY --from=build --chown=yocabs:yocabs /workspace/build/libs/app.jar app.jar
+
+USER yocabs
+EXPOSE 8080
+
+# Hosted testing profile: production-shaped, but with logged one-time codes and the sandbox
+# payment gateway. See application-staging.yml before pointing real customers at it.
+ENV SPRING_PROFILES_ACTIVE=staging \
+    JAVA_OPTS="-XX:MaxRAMPercentage=75 -Duser.timezone=Asia/Kolkata"
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

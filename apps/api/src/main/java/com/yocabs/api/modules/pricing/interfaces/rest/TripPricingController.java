@@ -12,6 +12,8 @@ import com.yocabs.api.modules.travelpartner.application.service.TripEligibilityS
 import com.yocabs.api.modules.travelpartner.domain.model.TravelPartner;
 import com.yocabs.api.modules.travelpartner.domain.repository.TravelPartnerRepository;
 import com.yocabs.api.modules.vehicle.domain.model.Vehicle;
+import com.yocabs.api.shared.security.Actor;
+import com.yocabs.api.shared.security.CurrentActor;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -57,6 +59,7 @@ public class TripPricingController {
     @PostMapping("/{tripRequestId}/priced-options")
     public List<PricedTravelOptionResponse>
     getPricedOptions(
+            @CurrentActor Actor actor,
             @PathVariable UUID tripRequestId
     ) {
 
@@ -73,6 +76,10 @@ public class TripPricingController {
                                                 + tripRequestId
                                 )
                         );
+
+        actor.requireTouristOwnerOrAdmin(
+                tripRequest.getTouristId().value()
+        );
 
         List<TravelPartner> candidates =
                 travelPartnerRepository

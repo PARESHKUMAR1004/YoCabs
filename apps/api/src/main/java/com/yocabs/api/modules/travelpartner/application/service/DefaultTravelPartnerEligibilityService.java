@@ -2,7 +2,7 @@ package com.yocabs.api.modules.travelpartner.application.service;
 
 import com.yocabs.api.modules.travelpartner.application.eligibility.TravelPartnerEligibilityRule;
 import com.yocabs.api.modules.travelpartner.domain.model.TravelPartner;
-import com.yocabs.api.modules.triprequest.domain.model.TripRequest;
+import com.yocabs.api.modules.tripsearch.domain.TripSearchCriteria;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,7 +21,7 @@ public class DefaultTravelPartnerEligibilityService
 
     @Override
     public List<TravelPartner> findEligiblePartners(
-            TripRequest tripRequest,
+            TripSearchCriteria criteria,
             List<TravelPartner> candidates
     ) {
 
@@ -31,7 +31,7 @@ public class DefaultTravelPartnerEligibilityService
                                 .allMatch(rule ->
                                         rule.isEligible(
                                                 partner,
-                                                tripRequest
+                                                criteria
                                         )
                                 )
                 )

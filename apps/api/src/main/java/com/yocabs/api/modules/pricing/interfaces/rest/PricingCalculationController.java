@@ -1,9 +1,12 @@
 package com.yocabs.api.modules.pricing.interfaces.rest;
 
+import com.yocabs.api.modules.pricing.application.PricingAccessGuard;
 import com.yocabs.api.modules.pricing.application.service.CalculatePriceService;
 import com.yocabs.api.modules.pricing.domain.PriceCalculation;
 import com.yocabs.api.modules.pricing.domain.PricingContext;
 import com.yocabs.api.modules.triprequest.domain.model.TripType;
+import com.yocabs.api.shared.security.Actor;
+import com.yocabs.api.shared.security.CurrentActor;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -18,17 +21,28 @@ public class PricingCalculationController {
 
     private final CalculatePriceService calculatePriceService;
 
+    private final PricingAccessGuard accessGuard;
+
     public PricingCalculationController(
-            CalculatePriceService calculatePriceService
+            CalculatePriceService calculatePriceService,
+            PricingAccessGuard accessGuard
     ) {
         this.calculatePriceService =
                 calculatePriceService;
+
+        this.accessGuard = accessGuard;
     }
 
     @PostMapping("/calculate")
     public PriceCalculationResponse calculate(
+            @CurrentActor Actor actor,
             @RequestBody CalculatePriceRequest request
     ) {
+
+        accessGuard.requireVehicleAccess(
+                actor,
+                request.vehicleId()
+        );
 
         PricingContext context =
                 new PricingContext(

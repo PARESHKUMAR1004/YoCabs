@@ -9,6 +9,7 @@ import com.yocabs.api.modules.routing.application.RouteCalculationService;
 import com.yocabs.api.modules.routing.domain.RouteCalculation;
 import com.yocabs.api.modules.triprequest.domain.model.TripRequest;
 import com.yocabs.api.modules.triprequest.domain.model.TripType;
+import com.yocabs.api.modules.tripsearch.domain.TripSearchCriteria;
 import com.yocabs.api.modules.travelpartner.application.model.EligibleTravelPartner;
 import com.yocabs.api.modules.vehicle.domain.model.Vehicle;
 import org.springframework.stereotype.Service;
@@ -49,14 +50,40 @@ public class TripPricingService {
             List<EligibleTravelPartner> eligiblePartners
     ) {
 
+        if (tripRequest == null) {
+            throw new IllegalArgumentException(
+                    "Trip request is required"
+            );
+        }
+
+        return calculatePrices(
+                TripSearchCriteria.from(tripRequest),
+                eligiblePartners
+        );
+    }
+
+    public List<PricedTravelOption> calculatePrices(
+            TripSearchCriteria criteria,
+            List<EligibleTravelPartner> eligiblePartners
+    ) {
+
+        return price(criteria, eligiblePartners).options();
+    }
+
+    /** Prices the options and also returns the route they were priced on. */
+    public PricingOutcome price(
+            TripSearchCriteria criteria,
+            List<EligibleTravelPartner> eligiblePartners
+    ) {
+
         validateInput(
-                tripRequest,
+                criteria,
                 eligiblePartners
         );
 
         RouteCalculation routeCalculation =
                 routeCalculationService.calculate(
-                        tripRequest.getItinerary()
+                        criteria.itinerary()
                 );
 
         PricingContext pricingContext =
@@ -68,7 +95,7 @@ public class TripPricingService {
                 );
 
         List<TripType> tripTypes =
-                determineTripTypes(tripRequest);
+                determineTripTypes(criteria);
 
         List<PricedTravelOption> results =
                 new ArrayList<>();
@@ -125,17 +152,26 @@ public class TripPricingService {
             }
         }
 
-        return List.copyOf(results);
+        return new PricingOutcome(
+                routeCalculation,
+                List.copyOf(results)
+        );
+    }
+
+    public record PricingOutcome(
+            RouteCalculation route,
+            List<PricedTravelOption> options
+    ) {
     }
 
     private List<TripType> determineTripTypes(
-            TripRequest tripRequest
+            TripSearchCriteria criteria
     ) {
 
-        if (tripRequest.getTripType() != null) {
+        if (criteria.tripType() != null) {
 
             return List.of(
-                    tripRequest.getTripType()
+                    criteria.tripType()
             );
         }
 
@@ -147,13 +183,13 @@ public class TripPricingService {
     }
 
     private void validateInput(
-            TripRequest tripRequest,
+            TripSearchCriteria criteria,
             List<EligibleTravelPartner> eligiblePartners
     ) {
 
-        if (tripRequest == null) {
+        if (criteria == null) {
             throw new IllegalArgumentException(
-                    "Trip request is required"
+                    "Trip search criteria is required"
             );
         }
 

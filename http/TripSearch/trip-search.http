@@ -1,0 +1,52 @@
+### Search - any vehicle, any trip type
+POST http://localhost:8080/api/v1/trip-search
+Content-Type: application/json
+
+{
+  "pickup": { "description": "Bhubaneswar Airport", "latitude": 20.2444, "longitude": 85.8178 },
+  "destination": { "description": "Puri", "latitude": 19.8135, "longitude": 85.8312 },
+  "stops": [],
+  "startDate": "2026-08-30",
+  "endDate": "2026-08-30",
+  "passengerCount": 4
+}
+
+### Search - SUV, one way only
+POST http://localhost:8080/api/v1/trip-search
+Content-Type: application/json
+
+{
+  "pickup": { "description": "Bhubaneswar Airport", "latitude": 20.2444, "longitude": 85.8178 },
+  "destination": { "description": "Puri", "latitude": 19.8135, "longitude": 85.8312 },
+  "stops": [
+    { "description": "Konark", "latitude": 19.8876, "longitude": 86.0945 }
+  ],
+  "startDate": "2026-08-30",
+  "endDate": "2026-08-30",
+  "passengerCount": 6,
+  "vehicleCategory": "SUV",
+  "tripType": "CHAUFFEUR_ONE_WAY"
+}
+
+### Search - pickup outside every service area (expect empty list)
+POST http://localhost:8080/api/v1/trip-search
+Content-Type: application/json
+
+{
+  "pickup": { "description": "Delhi", "latitude": 28.6139, "longitude": 77.2090 },
+  "destination": { "description": "Agra", "latitude": 27.1767, "longitude": 78.0081 },
+  "startDate": "2026-08-30",
+  "endDate": "2026-08-30",
+  "passengerCount": 4
+}
+
+### Search - invalid (missing passenger count, expect 400)
+POST http://localhost:8080/api/v1/trip-search
+Content-Type: application/json
+
+{
+  "pickup": { "description": "Bhubaneswar Airport", "latitude": 20.2444, "longitude": 85.8178 },
+  "destination": { "description": "Puri", "latitude": 19.8135, "longitude": 85.8312 },
+  "startDate": "2026-08-30",
+  "endDate": "2026-08-30"
+}

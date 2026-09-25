@@ -3,12 +3,15 @@ package com.yocabs.api.modules.vehicle.infrastructure.persistence;
 import com.yocabs.api.modules.vehicle.domain.model.Vehicle;
 import com.yocabs.api.modules.vehicle.domain.model.VehicleStatus;
 import com.yocabs.api.modules.vehicle.domain.repository.VehicleRepository;
+import com.yocabs.api.modules.vehicle.domain.valueobject.ServiceArea;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Repository
 public class VehicleRepositoryAdapter
@@ -17,11 +20,60 @@ public class VehicleRepositoryAdapter
     private final VehicleJpaRepository
             vehicleJpaRepository;
 
+    private final VehicleServiceAreaJpaRepository
+            serviceAreaJpaRepository;
+
     public VehicleRepositoryAdapter(
-            VehicleJpaRepository vehicleJpaRepository
+            VehicleJpaRepository vehicleJpaRepository,
+            VehicleServiceAreaJpaRepository serviceAreaJpaRepository
     ) {
         this.vehicleJpaRepository =
                 vehicleJpaRepository;
+
+        this.serviceAreaJpaRepository =
+                serviceAreaJpaRepository;
+    }
+
+    /** Attaches each vehicle's service areas, fetched for the whole list in one query. */
+    private List<Vehicle> withServiceAreas(
+            List<VehicleEntity> entities
+    ) {
+
+        List<Vehicle> vehicles =
+                entities.stream()
+                        .map(VehicleEntity::toDomain)
+                        .toList();
+
+        if (vehicles.isEmpty()) {
+            return vehicles;
+        }
+
+        Map<UUID, List<ServiceArea>> areasByVehicle =
+                serviceAreaJpaRepository
+                        .findByVehicleIdIn(
+                                vehicles.stream()
+                                        .map(Vehicle::getId)
+                                        .toList()
+                        )
+                        .stream()
+                        .collect(Collectors.groupingBy(
+                                VehicleServiceAreaEntity::getVehicleId,
+                                Collectors.mapping(
+                                        VehicleServiceAreaEntity::toDomain,
+                                        Collectors.toList()
+                                )
+                        ));
+
+        vehicles.forEach(vehicle ->
+                vehicle.attachServiceAreas(
+                        areasByVehicle.getOrDefault(
+                                vehicle.getId(),
+                                List.of()
+                        )
+                )
+        );
+
+        return vehicles;
     }
 
     @Override
@@ -75,7 +127,10 @@ public class VehicleRepositoryAdapter
 
         return vehicleJpaRepository
                 .findById(id)
-                .map(VehicleEntity::toDomain);
+                .map(entity ->
+                        withServiceAreas(List.of(entity))
+                                .get(0)
+                );
     }
 
     @Override
@@ -84,25 +139,23 @@ public class VehicleRepositoryAdapter
             UUID travelPartnerId
     ) {
 
-        return vehicleJpaRepository
-                .findByTravelPartnerId(
-                        travelPartnerId
-                )
-                .stream()
-                .map(VehicleEntity::toDomain)
-                .toList();
+        return withServiceAreas(
+                vehicleJpaRepository
+                        .findByTravelPartnerId(
+                                travelPartnerId
+                        )
+        );
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Vehicle> findAvailableVehicles() {
 
-        return vehicleJpaRepository
-                .findByStatus(
-                        VehicleStatus.AVAILABLE
-                )
-                .stream()
-                .map(VehicleEntity::toDomain)
-                .toList();
+        return withServiceAreas(
+                vehicleJpaRepository
+                        .findByStatus(
+                                VehicleStatus.AVAILABLE
+                        )
+        );
     }
 }

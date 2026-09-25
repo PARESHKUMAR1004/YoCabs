@@ -89,16 +89,8 @@ public class TripEligibilityService {
             );
         }
 
-        TripSearchCriteria criteria =
-                new TripSearchCriteria(
-                        tripRequest.getItinerary(),
-                        tripRequest.getPassengerCount().value(),
-                        tripRequest.getVehicleCategory(),
-                        tripRequest.getTripType()
-                );
-
         return findEligibleOptions(
-                criteria,
+                TripSearchCriteria.from(tripRequest),
                 candidates
         );
     }

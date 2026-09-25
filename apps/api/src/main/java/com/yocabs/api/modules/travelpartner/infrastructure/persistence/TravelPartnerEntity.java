@@ -2,12 +2,10 @@ package com.yocabs.api.modules.travelpartner.infrastructure.persistence;
 
 import com.yocabs.api.modules.travelpartner.domain.model.TravelPartner;
 import com.yocabs.api.modules.travelpartner.domain.model.TravelPartnerStatus;
-import com.yocabs.api.modules.travelpartner.domain.valueobject.ServiceArea;
 import jakarta.persistence.*;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -82,20 +80,11 @@ public class TravelPartnerEntity {
         );
     }
 
-    public TravelPartner toDomain(
-            List<ServiceAreaEntity> serviceAreaEntities
-    ) {
-
-        List<ServiceArea> serviceAreas =
-                serviceAreaEntities.stream()
-                        .map(ServiceAreaEntity::toDomain)
-                        .toList();
-
+    public TravelPartner toDomain() {
         return TravelPartner.reconstitute(
                 id,
                 name,
                 status,
-                serviceAreas,
                 createdAt,
                 updatedAt
         );

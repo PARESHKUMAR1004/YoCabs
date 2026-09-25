@@ -15,15 +15,98 @@ spring:
   flyway:
     enabled: true
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
 server:
   port: 8080
+  error:
+    include-message: never
+    include-stacktrace: never
+  forward-headers-strategy: framework
+
+logging:
+  pattern:
+    level: "%5p [%X{correlationId:-}]"
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
 
   endpoint:
     health:
       show-details: never
+      probes:
+        enabled: true
+
+yocabs:
+  security:
+    # Override in every non-local environment (>= 32 bytes). The built-in
+    # development secret is rejected when the "prod" profile is active.
+    # jwt-secret: ${YOCABS_JWT_SECRET}
+    access-token-ttl-minutes: 30
+    refresh-token-days: 30
+    admin-max-failed-logins: 5
+    admin-lock-minutes: 15
+
+  # First super administrator; no default credentials exist.
+  # bootstrap-admin:
+  #   email: ${YOCABS_BOOTSTRAP_ADMIN_EMAIL}
+  #   password: ${YOCABS_BOOTSTRAP_ADMIN_PASSWORD}
+
+  otp:
+    sender: logging   # development: prints the code to the log; use an SMS adapter in production
+    log-code: true
+    validity-minutes: 5
+    max-attempts: 5
+    resend-interval-seconds: 30
+
+  rate-limit:
+    otp-per-minute: 5
+    search-per-minute: 60
+
+  cors:
+    # Local admin-web dev server; production overrides via YOCABS_CORS_ALLOWED_ORIGINS
+    allowed-origins: "http://localhost:5173"
+
+  routing:
+    provider: haversine   # haversine | osrm | google | fixed
+    haversine:
+      road-factor: 1.3
+      average-speed-kmh: 40
+    osrm:
+      base-url: https://router.project-osrm.org
+      timeout-ms: 3000
+    google:
+      # Server-side key with the Routes API enabled. Billed per request, so it is
+      # never shipped to the apps. Restrict it by IP to the API's host.
+      api-key: ${YOCABS_GOOGLE_ROUTES_API_KEY:}
+      traffic-aware: true
+      timeout-ms: 5000
+
+  booking:
+    token-percentage: 5
+    commission-percentage: 10
+    hold-minutes: 15
+    free-cancellation-hours: 24
+    zone: Asia/Kolkata
+
+  negotiation:
+    expiry-minutes: 60
+
+  payment:
+    gateway: sandbox   # sandbox is refused when the "prod" profile is active
+    webhook-secret: sandbox-webhook-secret-change-me
+
+  storage:
+    local-path: ./data/documents
+    max-document-bytes: 5242880
+
+  verification:
+    # Comma-separated Document.Type values that must be APPROVED before a
+    # partner can be activated, e.g. GST_CERTIFICATE,TRADE_LICENSE
+    required-partner-documents: ""

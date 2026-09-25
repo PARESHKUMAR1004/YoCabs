@@ -1,6 +1,9 @@
 package com.yocabs.api.modules.vehicle.domain.model;
 
+import com.yocabs.api.modules.vehicle.domain.valueobject.ServiceArea;
+
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public class Vehicle {
@@ -24,6 +27,12 @@ public class Vehicle {
     private final Instant createdAt;
 
     private Instant updatedAt;
+
+    /**
+     * Where this vehicle will travel from. Areas belong to the vehicle rather than the partner,
+     * so one fleet can cover different ground with different cars. Loaded alongside the vehicle.
+     */
+    private List<ServiceArea> serviceAreas = List.of();
 
     private Vehicle(
             UUID id,
@@ -371,5 +380,77 @@ public class Vehicle {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public List<ServiceArea> getServiceAreas() {
+        return serviceAreas;
+    }
+
+    /**
+     * Attaches the areas loaded with this vehicle. The repository is the only caller: areas live
+     * in their own table, so they arrive separately from the vehicle row.
+     */
+    public void attachServiceAreas(
+            List<ServiceArea> areas
+    ) {
+        this.serviceAreas =
+                areas == null
+                        ? List.of()
+                        : List.copyOf(areas);
+    }
+
+    /**
+     * True when the pickup falls inside any of this vehicle's areas. A vehicle with no area
+     * configured covers nothing, so it never appears in a search.
+     */
+    public boolean coversLocation(
+            Double latitude,
+            Double longitude
+    ) {
+
+        if (latitude == null || longitude == null) {
+            return false;
+        }
+
+        return serviceAreas.stream()
+                .anyMatch(area ->
+                        distanceKm(
+                                latitude,
+                                longitude,
+                                area.latitude(),
+                                area.longitude()
+                        ) <= area.radiusKm()
+                );
+    }
+
+    /** Great-circle distance in kilometres. */
+    private static double distanceKm(
+            double fromLatitude,
+            double fromLongitude,
+            double toLatitude,
+            double toLongitude
+    ) {
+
+        final double earthRadiusKm = 6371.0;
+
+        double latitudeDelta =
+                Math.toRadians(toLatitude - fromLatitude);
+
+        double longitudeDelta =
+                Math.toRadians(toLongitude - fromLongitude);
+
+        double a =
+                Math.sin(latitudeDelta / 2)
+                        * Math.sin(latitudeDelta / 2)
+                        + Math.cos(Math.toRadians(fromLatitude))
+                        * Math.cos(Math.toRadians(toLatitude))
+                        * Math.sin(longitudeDelta / 2)
+                        * Math.sin(longitudeDelta / 2);
+
+        return earthRadiusKm * 2
+                * Math.atan2(
+                Math.sqrt(a),
+                Math.sqrt(1 - a)
+        );
     }
 }

@@ -1,0 +1,93 @@
+# Travel partner operations. Use a PARTNER (owner or staff) token in .env (YOCABS_TOKEN).
+
+@base = http://localhost:8080/api/v1
+@partnerId = PASTE_PARTNER_ID
+@bookingId = PASTE_BOOKING_ID
+@driverId = PASTE_DRIVER_ID
+
+### Bookings for my organisation
+GET {{base}}/travel-partners/{{partnerId}}/bookings?status=CONFIRMED
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Negotiation inbox
+GET {{base}}/travel-partners/{{partnerId}}/negotiations?status=OFFER_SENT
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Add a driver (creates the driver's login too)
+POST {{base}}/travel-partners/{{partnerId}}/drivers
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "name": "Ramesh Kumar",
+  "mobile": "9000000001",
+  "licenseNumber": "OD0220200012345"
+}
+
+### Assign the driver to a confirmed booking
+POST {{base}}/bookings/{{bookingId}}/driver
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "driverId": "{{driverId}}"
+}
+
+### Start / complete the trip (partner users or the assigned DRIVER)
+POST {{base}}/bookings/{{bookingId}}/start
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+###
+POST {{base}}/bookings/{{bookingId}}/complete
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Add staff (owner only)
+POST {{base}}/travel-partners/{{partnerId}}/staff
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "name": "Front desk",
+  "mobile": "9000000002"
+}
+
+### Wallet (balance > 0: YoCabs owes you; < 0: you owe YoCabs commission)
+GET {{base}}/travel-partners/{{partnerId}}/wallet
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Request a payout
+POST {{base}}/travel-partners/{{partnerId}}/payouts
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "amount": 500.00
+}
+
+### Reviews and rating
+GET {{base}}/travel-partners/{{partnerId}}/rating
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Upload a document (multipart). ownerType: PARTNER | VEHICLE | DRIVER
+POST {{base}}/documents
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: multipart/form-data; boundary=WebKitFormBoundary
+
+--WebKitFormBoundary
+Content-Disposition: form-data; name="ownerType"
+
+PARTNER
+--WebKitFormBoundary
+Content-Disposition: form-data; name="ownerId"
+
+{{partnerId}}
+--WebKitFormBoundary
+Content-Disposition: form-data; name="documentType"
+
+TRADE_LICENSE
+--WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="trade-license.pdf"
+Content-Type: application/pdf
+
+< ./trade-license.pdf
+--WebKitFormBoundary--

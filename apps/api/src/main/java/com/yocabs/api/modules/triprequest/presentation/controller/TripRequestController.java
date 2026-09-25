@@ -4,10 +4,15 @@ import com.yocabs.api.modules.triprequest.application.command.CreateTripRequestC
 import com.yocabs.api.modules.triprequest.application.service.CreateTripRequestService;
 import com.yocabs.api.modules.triprequest.application.service.GetTripRequestService;
 import com.yocabs.api.modules.triprequest.application.service.SubmitTripRequestService;
+import com.yocabs.api.modules.triprequest.domain.model.TripRequest;
 import com.yocabs.api.modules.triprequest.domain.model.TripType;
 import com.yocabs.api.modules.triprequest.presentation.dto.TripRequestResponse;
 import com.yocabs.api.modules.vehicle.domain.model.VehicleCategory;
+import com.yocabs.api.shared.security.Actor;
+import com.yocabs.api.shared.security.CurrentActor;
+import com.yocabs.api.shared.security.Role;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -35,10 +40,15 @@ public class TripRequestController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UUID create(@RequestBody CreateTripRequestRequest request) {
+    public UUID create(
+            @CurrentActor Actor actor,
+            @RequestBody CreateTripRequestRequest request
+    ) {
+
+        actor.requireRole(Role.TOURIST);
 
         var command = new CreateTripRequestCommand(
-                request.touristId(),
+                actor.userId(),
                 request.pickupDescription(),
                 request.pickupLatitude(),
                 request.pickupLongitude(),
@@ -62,25 +72,40 @@ public class TripRequestController {
 
     @GetMapping("/{id}")
     public TripRequestResponse getById(
+            @CurrentActor Actor actor,
             @PathVariable UUID id
     ) {
-        return TripRequestResponse.from(
-                getTripRequestService.execute(id)
-        );
+        TripRequest tripRequest = getTripRequestService.execute(id);
+        requireAccess(actor, tripRequest);
+
+        return TripRequestResponse.from(tripRequest);
     }
 
     @PostMapping("/{id}/submit")
     public TripRequestResponse submit(
+            @CurrentActor Actor actor,
             @PathVariable UUID id
     ) {
+        requireAccess(actor, getTripRequestService.execute(id));
+
         return TripRequestResponse.from(
                 submitTripRequestService.execute(id)
         );
     }
 
+    private static void requireAccess(Actor actor, TripRequest tripRequest) {
+        if (actor.isAdmin()) {
+            return;
+        }
+        if (actor.role() == Role.TOURIST
+                && actor.userId().equals(tripRequest.getTouristId().value())) {
+            return;
+        }
+        throw new AccessDeniedException("Not permitted for this trip request");
+    }
+
 
     public record CreateTripRequestRequest(
-            UUID touristId,
             String pickupDescription,
             Double pickupLatitude,
             Double pickupLongitude,

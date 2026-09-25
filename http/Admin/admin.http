@@ -1,0 +1,129 @@
+# Admin / super admin operations. Use an ADMIN or SUPER_ADMIN token in .env (YOCABS_TOKEN).
+
+@base = http://localhost:8080/api/v1/admin
+@partnerId = PASTE_PARTNER_ID
+@documentId = PASTE_DOCUMENT_ID
+@payoutId = PASTE_PAYOUT_ID
+@userId = PASTE_USER_ID
+
+### Dashboard
+GET {{base}}/dashboard
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Partners (optionally ?status=PENDING_APPROVAL|ACTIVE|SUSPENDED|INACTIVE)
+GET {{base}}/travel-partners?status=PENDING_APPROVAL
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Documents awaiting review
+GET {{base}}/documents?status=PENDING
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Approve / reject a document
+POST {{base}}/documents/{{documentId}}/approve
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+###
+POST {{base}}/documents/{{documentId}}/reject
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "reason": "Photo is not legible"
+}
+
+### Give an admin-created partner its owner login (needed once per partner created via POST /travel-partners)
+POST {{base}}/travel-partners/{{partnerId}}/owner
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "name": "Amit Kumar",
+  "mobile": "9123456780"
+}
+
+### Activate a partner (fails until the required documents are approved)
+POST {{base}}/travel-partners/{{partnerId}}/activate
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Suspend / reinstate / deactivate
+POST {{base}}/travel-partners/{{partnerId}}/suspend
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "reason": "Repeated cancellations"
+}
+
+###
+POST {{base}}/travel-partners/{{partnerId}}/reinstate
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### All bookings
+GET {{base}}/bookings?status=CONFIRMED&limit=50
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Payout queue: mark paid / reject
+GET {{base}}/payouts?status=REQUESTED
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+###
+POST {{base}}/payouts/{{payoutId}}/pay
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "bankReference": "UTR123456789"
+}
+
+### Users
+GET {{base}}/users?role=TOURIST
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+###
+POST {{base}}/users/{{userId}}/block
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Create another admin (SUPER_ADMIN only)
+POST {{base}}/admins
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "email": "ops@example.com",
+  "password": "a-strong-passphrase",
+  "displayName": "Operations"
+}
+
+### Finance views (from/to default to the last 30 days; payments also accept ?status=SUCCEEDED|REFUNDED|FAILED...)
+GET {{base}}/payments?from=2026-09-01&to=2026-09-30&limit=100
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+###
+GET {{base}}/refunds
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+###
+GET {{base}}/cancellations
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Facility catalogue management
+GET {{base}}/facilities
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+###
+POST {{base}}/facilities
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "code": "WIFI",
+  "name": "Wi-Fi"
+}
+
+###
+POST {{base}}/facilities/WIFI/deactivate
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Audit trail
+GET {{base}}/audit-logs?limit=100
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}

@@ -1,11 +1,12 @@
 ### Create Vehicle
 POST http://localhost:8080/api/v1/travel-partners/4aa12692-6972-4772-8c54-19d5933f76bc/vehicles
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
 Content-Type: application/json
 
 {
-  "registrationNumber": "OD02AB2735",
+  "registrationNumber": "OD19AB2735",
   "make": "MG",
-  "model": "HECTOR",
+  "model": "HETR",
   "category": "SUV",
   "passengerCapacity": 7
 }

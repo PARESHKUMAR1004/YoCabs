@@ -1,17 +1,16 @@
 package com.yocabs.api.modules.travelpartner.presentation.controller;
 
-import com.yocabs.api.modules.travelpartner.application.command.AddServiceAreaCommand;
+import com.yocabs.api.modules.admin.application.AdminService;
 import com.yocabs.api.modules.travelpartner.application.command.CreateTravelPartnerCommand;
-import com.yocabs.api.modules.travelpartner.application.command.RemoveServiceAreaCommand;
-import com.yocabs.api.modules.travelpartner.application.command.UpdateServiceAreaCommand;
-import com.yocabs.api.modules.travelpartner.application.service.ActivateTravelPartnerService;
-import com.yocabs.api.modules.travelpartner.application.service.AddServiceAreaService;
 import com.yocabs.api.modules.travelpartner.application.service.CreateTravelPartnerService;
-import com.yocabs.api.modules.travelpartner.application.service.RemoveServiceAreaService;
-import com.yocabs.api.modules.travelpartner.application.service.UpdateServiceAreaService;
+import com.yocabs.api.modules.travelpartner.application.service.GetTravelPartnerService;
+import com.yocabs.api.modules.travelpartner.domain.model.TravelPartner;
+import com.yocabs.api.shared.security.Actor;
+import com.yocabs.api.shared.security.CurrentActor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @RestController
@@ -19,30 +18,28 @@ import java.util.UUID;
 public class TravelPartnerController {
 
     private final CreateTravelPartnerService createService;
-    private final ActivateTravelPartnerService activateService;
-    private final AddServiceAreaService addServiceAreaService;
-    private final UpdateServiceAreaService updateServiceAreaService;
-    private final RemoveServiceAreaService removeServiceAreaService;
+    private final GetTravelPartnerService getService;
+    private final AdminService adminService;
 
     public TravelPartnerController(
             CreateTravelPartnerService createService,
-            ActivateTravelPartnerService activateService,
-            AddServiceAreaService addServiceAreaService,
-            UpdateServiceAreaService updateServiceAreaService,
-            RemoveServiceAreaService removeServiceAreaService
+            GetTravelPartnerService getService,
+            AdminService adminService
     ) {
         this.createService = createService;
-        this.activateService = activateService;
-        this.addServiceAreaService = addServiceAreaService;
-        this.updateServiceAreaService = updateServiceAreaService;
-        this.removeServiceAreaService = removeServiceAreaService;
+        this.getService = getService;
+        this.adminService = adminService;
     }
 
+    /** Admin-created partner (self-service registration is POST /auth/partner/register). */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UUID create(
+            @CurrentActor Actor actor,
             @RequestBody CreateTravelPartnerRequest request
     ) {
+
+        actor.requireAdmin();
 
         return createService
                 .execute(
@@ -53,84 +50,49 @@ public class TravelPartnerController {
                 .getId();
     }
 
+    /**
+     * The partner's own organisation and its status (awaiting approval / active ...).
+     * Service areas belong to each vehicle, under /travel-partners/{id}/vehicles.
+     */
+    @GetMapping("/{id}")
+    public TravelPartnerResponse get(
+            @CurrentActor Actor actor,
+            @PathVariable UUID id
+    ) {
+        return TravelPartnerResponse.from(getService.execute(actor, id));
+    }
+
+    /** Goes through the admin verification gate (required documents approved). */
     @PostMapping("/{id}/activate")
     public UUID activate(
+            @CurrentActor Actor actor,
             @PathVariable UUID id
     ) {
 
-        return activateService
-                .execute(id)
+        return adminService
+                .activatePartner(actor, id)
                 .getId();
     }
 
-    @PostMapping("/{id}/service-areas")
-    @ResponseStatus(HttpStatus.CREATED)
-    public UUID addServiceArea(
-            @PathVariable UUID id,
-            @RequestBody ServiceAreaRequest request
+    public record TravelPartnerResponse(
+            UUID id,
+            String name,
+            String status,
+            Instant createdAt
     ) {
 
-        return addServiceAreaService
-                .execute(
-                        new AddServiceAreaCommand(
-                                id,
-                                request.name(),
-                                request.latitude(),
-                                request.longitude(),
-                                request.radiusKm()
-                        )
-                )
-                .getServiceAreas()
-                .getLast()
-                .id();
-    }
-
-    @PutMapping("/{partnerId}/service-areas/{serviceAreaId}")
-    public UUID updateServiceArea(
-            @PathVariable UUID partnerId,
-            @PathVariable UUID serviceAreaId,
-            @RequestBody ServiceAreaRequest request
-    ) {
-
-        return updateServiceAreaService
-                .execute(
-                        new UpdateServiceAreaCommand(
-                                partnerId,
-                                serviceAreaId,
-                                request.name(),
-                                request.latitude(),
-                                request.longitude(),
-                                request.radiusKm()
-                        )
-                )
-                .getId();
-    }
-
-    @DeleteMapping("/{partnerId}/service-areas/{serviceAreaId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void removeServiceArea(
-            @PathVariable UUID partnerId,
-            @PathVariable UUID serviceAreaId
-    ) {
-
-        removeServiceAreaService.execute(
-                new RemoveServiceAreaCommand(
-                        partnerId,
-                        serviceAreaId
-                )
-        );
+        static TravelPartnerResponse from(TravelPartner partner) {
+            return new TravelPartnerResponse(
+                    partner.getId(),
+                    partner.getName(),
+                    partner.getStatus().name(),
+                    partner.getCreatedAt()
+            );
+        }
     }
 
     public record CreateTravelPartnerRequest(
             String name
-    ) {
-    }
-
-    public record ServiceAreaRequest(
-            String name,
-            double latitude,
-            double longitude,
-            double radiusKm
     ) {
     }
 }

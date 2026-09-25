@@ -1,18 +1,13 @@
 package com.yocabs.api.modules.vehicle.application.eligibility;
 
-import com.yocabs.api.modules.triprequest.domain.model.TripRequest;
 import com.yocabs.api.modules.triprequest.domain.model.TripType;
 import com.yocabs.api.modules.triprequest.domain.valueobject.Itinerary;
 import com.yocabs.api.modules.triprequest.domain.valueobject.Location;
-import com.yocabs.api.modules.triprequest.domain.valueobject.PassengerCount;
-import com.yocabs.api.modules.triprequest.domain.valueobject.TravelDateRange;
-import com.yocabs.api.modules.triprequest.domain.valueobject.TripBrief;
-import com.yocabs.api.modules.triprequest.domain.valueobject.TouristId;
+import com.yocabs.api.modules.tripsearch.domain.TripSearchCriteria;
 import com.yocabs.api.modules.vehicle.domain.model.Vehicle;
 import com.yocabs.api.modules.vehicle.domain.model.VehicleCategory;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,13 +27,13 @@ class VehicleCategoryEligibilityRuleTest {
                         VehicleCategory.MUV
                 );
 
-        TripRequest tripRequest =
-                createTripRequest(null);
+        TripSearchCriteria criteria =
+                createCriteria(null);
 
         assertTrue(
                 rule.isEligible(
                         vehicle,
-                        tripRequest
+                        criteria
                 )
         );
     }
@@ -51,15 +46,15 @@ class VehicleCategoryEligibilityRuleTest {
                         VehicleCategory.MUV
                 );
 
-        TripRequest tripRequest =
-                createTripRequest(
+        TripSearchCriteria criteria =
+                createCriteria(
                         VehicleCategory.MUV
                 );
 
         assertTrue(
                 rule.isEligible(
                         vehicle,
-                        tripRequest
+                        criteria
                 )
         );
     }
@@ -72,15 +67,15 @@ class VehicleCategoryEligibilityRuleTest {
                         VehicleCategory.SUV
                 );
 
-        TripRequest tripRequest =
-                createTripRequest(
+        TripSearchCriteria criteria =
+                createCriteria(
                         VehicleCategory.MUV
                 );
 
         assertFalse(
                 rule.isEligible(
                         vehicle,
-                        tripRequest
+                        criteria
                 )
         );
     }
@@ -99,7 +94,7 @@ class VehicleCategoryEligibilityRuleTest {
         );
     }
 
-    private TripRequest createTripRequest(
+    private TripSearchCriteria createCriteria(
             VehicleCategory category
     ) {
 
@@ -124,21 +119,11 @@ class VehicleCategoryEligibilityRuleTest {
                         destination
                 );
 
-        return TripRequest.create(
-                new TouristId(
-                        UUID.randomUUID()
-                ),
+        return new TripSearchCriteria(
                 itinerary,
-                new TravelDateRange(
-                        LocalDate.of(2026, 8, 30),
-                        LocalDate.of(2026, 8, 30)
-                ),
-                new PassengerCount(4),
-                new TripBrief(
-                        "Bhubaneswar to Puri"
-                ),
-                TripType.CHAUFFEUR_ONE_WAY,
-                category
+                4,
+                category,
+                TripType.CHAUFFEUR_ONE_WAY
         );
     }
 }

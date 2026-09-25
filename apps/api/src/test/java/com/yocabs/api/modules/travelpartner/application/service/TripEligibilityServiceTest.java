@@ -1,7 +1,6 @@
 package com.yocabs.api.modules.travelpartner.application.service;
 
 import com.yocabs.api.modules.travelpartner.application.eligibility.ActiveTravelPartnerRule;
-import com.yocabs.api.modules.travelpartner.application.eligibility.ServiceAreaEligibilityRule;
 import com.yocabs.api.modules.travelpartner.application.model.EligibleTravelPartner;
 import com.yocabs.api.modules.travelpartner.domain.model.TravelPartner;
 import com.yocabs.api.modules.triprequest.domain.model.TripRequest;

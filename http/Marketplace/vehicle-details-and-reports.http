@@ -1,0 +1,73 @@
+# Vehicle details/facilities/photos and partner reports. Use a PARTNER token (owner for earnings) in .env.
+
+@base = http://localhost:8080/api/v1
+@partnerId = PASTE_PARTNER_ID
+@vehicleId = PASTE_VEHICLE_ID
+
+### Facility catalogue (admin-managed; any signed-in user can read)
+GET {{base}}/facilities
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Vehicle details + facilities. Details are replaced as a whole;
+### facilityCodes replace the list, or leave the field out to keep the current facilities.
+PUT {{base}}/travel-partners/{{partnerId}}/vehicles/{{vehicleId}}/profile
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "fuelType": "DIESEL",
+  "transmission": "MANUAL",
+  "modelYear": 2022,
+  "luggageCapacity": 4,
+  "facilityCodes": ["AC", "MUSIC_SYSTEM", "WATER_BOTTLE", "MOBILE_CHARGER"]
+}
+
+### Read them back (includes each photo's review status)
+GET {{base}}/travel-partners/{{partnerId}}/vehicles/{{vehicleId}}/profile
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Upload a vehicle photo (JPEG/PNG). Tourists only see it after an admin approves it.
+POST {{base}}/documents
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: multipart/form-data; boundary=WebKitFormBoundary
+
+--WebKitFormBoundary
+Content-Disposition: form-data; name="ownerType"
+
+VEHICLE
+--WebKitFormBoundary
+Content-Disposition: form-data; name="ownerId"
+
+{{vehicleId}}
+--WebKitFormBoundary
+Content-Disposition: form-data; name="documentType"
+
+VEHICLE_PHOTO
+--WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="front.jpg"
+Content-Type: image/jpeg
+
+< ./front.jpg
+--WebKitFormBoundary--
+
+### ---- Reports (dates filter by trip start date; default = last 30 days; max 366 days) ----
+
+### Earnings (owner or admin only)
+GET {{base}}/travel-partners/{{partnerId}}/reports/earnings?from=2026-09-01&to=2026-09-30
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Trips
+GET {{base}}/travel-partners/{{partnerId}}/reports/trips?limit=100
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Vehicles / drivers / cancellations
+GET {{base}}/travel-partners/{{partnerId}}/reports/vehicles
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+###
+GET {{base}}/travel-partners/{{partnerId}}/reports/drivers
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+###
+GET {{base}}/travel-partners/{{partnerId}}/reports/cancellations
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}

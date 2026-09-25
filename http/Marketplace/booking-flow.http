@@ -1,0 +1,116 @@
+# Tourist journey after search: trip request -> negotiate -> book -> pay -> review.
+# Use a TOURIST token in .env (YOCABS_TOKEN) unless a request says PARTNER.
+
+@base = http://localhost:8080/api/v1
+@tripRequestId = PASTE_TRIP_REQUEST_ID
+@vehicleId = PASTE_VEHICLE_ID
+@negotiationId = PASTE_NEGOTIATION_ID
+@bookingId = PASTE_BOOKING_ID
+@paymentId = PASTE_PAYMENT_ID
+
+### 1. Create a trip request (the tourist is taken from the token, never from the body)
+POST {{base}}/trip-requests
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "pickupDescription": "Bhubaneswar Airport",
+  "pickupLatitude": 20.2444,
+  "pickupLongitude": 85.8178,
+  "stops": [],
+  "destinationDescription": "Puri",
+  "destinationLatitude": 19.8135,
+  "destinationLongitude": 85.8312,
+  "startDate": "2026-10-10",
+  "endDate": "2026-10-10",
+  "passengerCount": 4,
+  "tripBrief": "Airport to Puri",
+  "vehicleCategory": "SUV"
+}
+
+### 2. Submit it
+POST {{base}}/trip-requests/{{tripRequestId}}/submit
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### 3. Ask for a better price (one offer per partner per trip)
+POST {{base}}/trip-requests/{{tripRequestId}}/negotiations
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "vehicleId": "{{vehicleId}}",
+  "tripType": "CHAUFFEUR_ONE_WAY",
+  "offeredAmount": 1800.00
+}
+
+### 3a. PARTNER responds: ACCEPT | REJECT | COUNTER (needs a PARTNER token)
+POST {{base}}/negotiations/{{negotiationId}}/respond
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "decision": "COUNTER",
+  "counterAmount": 1950.00
+}
+
+### 3b. Tourist accepts or declines the counter offer
+POST {{base}}/negotiations/{{negotiationId}}/counter-response
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "accept": true
+}
+
+### 4. Book (price, availability and eligibility are re-checked; the Idempotency-Key makes retries safe)
+POST {{base}}/bookings
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Idempotency-Key: 7f3c0d9e-2b7a-4c55-9f0e-6f1d2a3b4c5d
+Content-Type: application/json
+
+{
+  "tripRequestId": "{{tripRequestId}}",
+  "vehicleId": "{{vehicleId}}",
+  "tripType": "CHAUFFEUR_ONE_WAY",
+  "negotiationId": "{{negotiationId}}"
+}
+
+### 5. Start the 5% token payment
+POST {{base}}/bookings/{{bookingId}}/payments
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### 5a. DEV ONLY: play the payment provider and complete the payment (outcome SUCCESS | FAILURE)
+POST {{base}}/dev/payments/{{paymentId}}/simulate
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "outcome": "SUCCESS"
+}
+
+### 6. My bookings
+GET {{base}}/bookings
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### 7. Cancel (refund follows the free-cancellation window)
+POST {{base}}/bookings/{{bookingId}}/cancel
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "reason": "Plans changed"
+}
+
+### 8. Review a completed trip
+POST {{base}}/bookings/{{bookingId}}/review
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "rating": 5,
+  "comment": "Smooth ride"
+}
+
+### 9. Notifications
+GET {{base}}/notifications?unreadOnly=true
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}

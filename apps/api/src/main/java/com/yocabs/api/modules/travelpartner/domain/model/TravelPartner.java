@@ -1,10 +1,7 @@
 package com.yocabs.api.modules.travelpartner.domain.model;
 
-import com.yocabs.api.modules.travelpartner.domain.valueobject.ServiceArea;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 public class TravelPartner {
@@ -15,8 +12,6 @@ public class TravelPartner {
 
     private TravelPartnerStatus status;
 
-    private final List<ServiceArea> serviceAreas;
-
     private final Instant createdAt;
 
     private Instant updatedAt;
@@ -25,14 +20,12 @@ public class TravelPartner {
             UUID id,
             String name,
             TravelPartnerStatus status,
-            List<ServiceArea> serviceAreas,
             Instant createdAt,
             Instant updatedAt
     ) {
         this.id = id;
         this.name = name;
         this.status = status;
-        this.serviceAreas = new ArrayList<>(serviceAreas);
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -48,7 +41,6 @@ public class TravelPartner {
                 UUID.randomUUID(),
                 name.trim(),
                 TravelPartnerStatus.PENDING_APPROVAL,
-                List.of(),
                 now,
                 now
         );
@@ -59,6 +51,18 @@ public class TravelPartner {
         if (status != TravelPartnerStatus.PENDING_APPROVAL) {
             throw new IllegalStateException(
                     "Only a partner pending approval can be activated"
+            );
+        }
+
+        status = TravelPartnerStatus.ACTIVE;
+        updatedAt = Instant.now();
+    }
+
+    public void reinstate() {
+
+        if (status != TravelPartnerStatus.SUSPENDED) {
+            throw new IllegalStateException(
+                    "Only a suspended partner can be reinstated"
             );
         }
 
@@ -90,99 +94,6 @@ public class TravelPartner {
         updatedAt = Instant.now();
     }
 
-    public void addServiceArea(
-            ServiceArea serviceArea
-    ) {
-        if (serviceArea == null) {
-            throw new IllegalArgumentException(
-                    "Service area is required"
-            );
-        }
-
-        boolean alreadyExists =
-                serviceAreas.stream()
-                        .anyMatch(existing ->
-                                existing.id().equals(
-                                        serviceArea.id()
-                                )
-                        );
-
-        if (alreadyExists) {
-            throw new IllegalArgumentException(
-                    "Service area already exists: "
-                            + serviceArea.id()
-            );
-        }
-
-        serviceAreas.add(serviceArea);
-        updatedAt = Instant.now();
-    }
-
-    public void updateServiceArea(
-            UUID serviceAreaId,
-            String name,
-            double latitude,
-            double longitude,
-            double radiusKm
-    ) {
-
-        int index = findServiceAreaIndex(
-                serviceAreaId
-        );
-
-        ServiceArea updated =
-                new ServiceArea(
-                        serviceAreaId,
-                        name,
-                        latitude,
-                        longitude,
-                        radiusKm
-                );
-
-        serviceAreas.set(index, updated);
-
-        updatedAt = Instant.now();
-    }
-
-    public void removeServiceArea(
-            UUID serviceAreaId
-    ) {
-
-        int index = findServiceAreaIndex(
-                serviceAreaId
-        );
-
-        serviceAreas.remove(index);
-
-        updatedAt = Instant.now();
-    }
-
-    private int findServiceAreaIndex(
-            UUID serviceAreaId
-    ) {
-
-        if (serviceAreaId == null) {
-            throw new IllegalArgumentException(
-                    "Service area ID is required"
-            );
-        }
-
-        for (int i = 0; i < serviceAreas.size(); i++) {
-
-            if (serviceAreas.get(i)
-                    .id()
-                    .equals(serviceAreaId)) {
-
-                return i;
-            }
-        }
-
-        throw new IllegalArgumentException(
-                "Service area not found: "
-                        + serviceAreaId
-        );
-    }
-
     private static void validateName(
             String name
     ) {
@@ -204,7 +115,6 @@ public class TravelPartner {
             UUID id,
             String name,
             TravelPartnerStatus status,
-            List<ServiceArea> serviceAreas,
             Instant createdAt,
             Instant updatedAt
     ) {
@@ -219,12 +129,6 @@ public class TravelPartner {
         if (status == null) {
             throw new IllegalArgumentException(
                     "Travel partner status is required"
-            );
-        }
-
-        if (serviceAreas == null) {
-            throw new IllegalArgumentException(
-                    "Service areas are required"
             );
         }
 
@@ -244,7 +148,6 @@ public class TravelPartner {
                 id,
                 name,
                 status,
-                serviceAreas,
                 createdAt,
                 updatedAt
         );
@@ -260,10 +163,6 @@ public class TravelPartner {
 
     public TravelPartnerStatus getStatus() {
         return status;
-    }
-
-    public List<ServiceArea> getServiceAreas() {
-        return List.copyOf(serviceAreas);
     }
 
     public Instant getCreatedAt() {

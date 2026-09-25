@@ -3,12 +3,15 @@ package com.yocabs.api.modules.routing.infrastructure;
 import com.yocabs.api.modules.routing.application.RouteCalculationService;
 import com.yocabs.api.modules.routing.domain.RouteCalculation;
 import com.yocabs.api.modules.triprequest.domain.valueobject.Itinerary;
-import org.springframework.stereotype.Service;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 
-@Service
+/** Fixed 100 km / 120 min route; only for demos (yocabs.routing.provider=fixed). */
+@Component
+@ConditionalOnProperty(name = "yocabs.routing.provider", havingValue = "fixed")
 public class DefaultRouteCalculationService
         implements RouteCalculationService {
 

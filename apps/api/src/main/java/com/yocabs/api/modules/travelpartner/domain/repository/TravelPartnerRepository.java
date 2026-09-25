@@ -1,6 +1,7 @@
 package com.yocabs.api.modules.travelpartner.domain.repository;
 
 import com.yocabs.api.modules.travelpartner.domain.model.TravelPartner;
+import com.yocabs.api.modules.travelpartner.domain.model.TravelPartnerStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,4 +16,8 @@ public interface TravelPartnerRepository {
     Optional<TravelPartner> findById(UUID id);
 
     List<TravelPartner> findActivePartners();
+
+    List<TravelPartner> findByStatus(TravelPartnerStatus status);
+
+    List<TravelPartner> findAll();
 }

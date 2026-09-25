@@ -1,0 +1,45 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+
+server:
+  shutdown: graceful
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+yocabs:
+  security:
+    jwt-secret: ${YOCABS_JWT_SECRET}
+
+  bootstrap-admin:
+    email: ${YOCABS_BOOTSTRAP_ADMIN_EMAIL:}
+    password: ${YOCABS_BOOTSTRAP_ADMIN_PASSWORD:}
+
+  otp:
+    sender: sms          # requires an OtpSender adapter bean for your SMS provider
+    log-code: false
+
+  cors:
+    allowed-origins: ${YOCABS_CORS_ALLOWED_ORIGINS:}
+
+  routing:
+    provider: ${YOCABS_ROUTING_PROVIDER:osrm}
+    google:
+      api-key: ${YOCABS_GOOGLE_ROUTES_API_KEY:}
+      traffic-aware: ${YOCABS_GOOGLE_ROUTES_TRAFFIC_AWARE:true}
+    osrm:
+      base-url: ${YOCABS_OSRM_BASE_URL}
+
+  payment:
+    gateway: ${YOCABS_PAYMENT_GATEWAY}   # a real PaymentGateway adapter; "sandbox" fails startup
+    webhook-secret: ${YOCABS_PAYMENT_WEBHOOK_SECRET}
+
+  storage:
+    local-path: ${YOCABS_STORAGE_PATH:/var/lib/yocabs/documents}

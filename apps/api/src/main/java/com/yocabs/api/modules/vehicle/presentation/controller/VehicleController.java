@@ -4,6 +4,8 @@ import com.yocabs.api.modules.vehicle.application.service.VehicleService;
 import com.yocabs.api.modules.vehicle.domain.model.Vehicle;
 import com.yocabs.api.modules.vehicle.domain.model.VehicleCategory;
 import com.yocabs.api.modules.vehicle.domain.model.VehicleStatus;
+import com.yocabs.api.shared.security.Actor;
+import com.yocabs.api.shared.security.CurrentActor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,9 +31,13 @@ public class VehicleController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public VehicleResponse create(
+            @CurrentActor Actor actor,
             @PathVariable UUID travelPartnerId,
             @RequestBody CreateVehicleRequest request
     ) {
+
+        actor.requirePartnerAccess(travelPartnerId);
+
 
         Vehicle vehicle =
                 vehicleService.createVehicle(
@@ -50,9 +56,13 @@ public class VehicleController {
 
     @GetMapping("/{vehicleId}")
     public VehicleResponse get(
+            @CurrentActor Actor actor,
             @PathVariable UUID travelPartnerId,
             @PathVariable UUID vehicleId
     ) {
+
+        actor.requirePartnerAccess(travelPartnerId);
+
 
         Vehicle vehicle =
                 vehicleService.getVehicle(
@@ -67,10 +77,14 @@ public class VehicleController {
 
     @PutMapping("/{vehicleId}")
     public VehicleResponse update(
+            @CurrentActor Actor actor,
             @PathVariable UUID travelPartnerId,
             @PathVariable UUID vehicleId,
             @RequestBody UpdateVehicleRequest request
     ) {
+
+        actor.requirePartnerAccess(travelPartnerId);
+
 
         Vehicle vehicle =
                 vehicleService.updateVehicle(
@@ -89,8 +103,12 @@ public class VehicleController {
 
     @GetMapping
     public List<VehicleResponse> list(
+            @CurrentActor Actor actor,
             @PathVariable UUID travelPartnerId
     ) {
+
+        actor.requirePartnerAccess(travelPartnerId);
+
 
         return vehicleService
                 .listVehicles(
@@ -103,9 +121,13 @@ public class VehicleController {
 
     @PostMapping("/{vehicleId}/make-available")
     public VehicleResponse makeAvailable(
+            @CurrentActor Actor actor,
             @PathVariable UUID travelPartnerId,
             @PathVariable UUID vehicleId
     ) {
+
+        actor.requirePartnerAccess(travelPartnerId);
+
 
         return VehicleResponse.from(
                 vehicleService.makeAvailable(
@@ -117,9 +139,13 @@ public class VehicleController {
 
     @PostMapping("/{vehicleId}/make-unavailable")
     public VehicleResponse makeUnavailable(
+            @CurrentActor Actor actor,
             @PathVariable UUID travelPartnerId,
             @PathVariable UUID vehicleId
     ) {
+
+        actor.requirePartnerAccess(travelPartnerId);
+
 
         return VehicleResponse.from(
                 vehicleService.makeUnavailable(
@@ -131,9 +157,13 @@ public class VehicleController {
 
     @PostMapping("/{vehicleId}/maintenance")
     public VehicleResponse sendToMaintenance(
+            @CurrentActor Actor actor,
             @PathVariable UUID travelPartnerId,
             @PathVariable UUID vehicleId
     ) {
+
+        actor.requirePartnerAccess(travelPartnerId);
+
 
         return VehicleResponse.from(
                 vehicleService.sendToMaintenance(
@@ -145,9 +175,13 @@ public class VehicleController {
 
     @PostMapping("/{vehicleId}/deactivate")
     public VehicleResponse deactivate(
+            @CurrentActor Actor actor,
             @PathVariable UUID travelPartnerId,
             @PathVariable UUID vehicleId
     ) {
+
+        actor.requirePartnerAccess(travelPartnerId);
+
 
         return VehicleResponse.from(
                 vehicleService.deactivate(
@@ -177,6 +211,16 @@ public class VehicleController {
 
 
 
+    /** Mirrors VehicleServiceAreaController.ServiceAreaResponse so clients see one area shape. */
+    public record ServiceAreaResponse(
+            UUID id,
+            String name,
+            double latitude,
+            double longitude,
+            double radiusKm
+    ) {
+    }
+
     public record VehicleResponse(
             UUID id,
             UUID travelPartnerId,
@@ -186,6 +230,7 @@ public class VehicleController {
             VehicleCategory category,
             int passengerCapacity,
             VehicleStatus status,
+            List<ServiceAreaResponse> serviceAreas,
             Instant createdAt,
             Instant updatedAt
     ) {
@@ -203,6 +248,15 @@ public class VehicleController {
                     vehicle.getCategory(),
                     vehicle.getPassengerCapacity(),
                     vehicle.getStatus(),
+                    vehicle.getServiceAreas().stream()
+                            .map(area -> new ServiceAreaResponse(
+                                    area.id(),
+                                    area.name(),
+                                    area.latitude(),
+                                    area.longitude(),
+                                    area.radiusKm()
+                            ))
+                            .toList(),
                     vehicle.getCreatedAt(),
                     vehicle.getUpdatedAt()
             );

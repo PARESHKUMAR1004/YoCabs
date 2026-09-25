@@ -1,0 +1,64 @@
+# How authentication works in these .http files
+# 1. Run one of the login requests below and copy `accessToken` from the response.
+# 2. Put it in a file named `.env` next to this repo's root (or your workspace root):
+#        YOCABS_TOKEN=eyJhbGciOi...
+#    Every other .http file sends it as `Authorization: Bearer {{$dotenv YOCABS_TOKEN}}`.
+# Access tokens live 30 minutes; use /auth/refresh with the refreshToken to get a new pair.
+# Which token you need: tourist (search-to-booking), partner (fleet, pricing, drivers), admin (/admin/**).
+
+### 1. Tourist / partner / driver: request a one-time code
+# In development the code is printed in the API log:  [DEV OTP] code 123456 for ******3210
+POST http://localhost:8080/api/v1/auth/otp/request
+Content-Type: application/json
+
+{
+  "mobile": "9876543210"
+}
+
+### 2. Verify the code -> tokens (a new mobile number becomes a TOURIST account)
+POST http://localhost:8080/api/v1/auth/otp/verify
+Content-Type: application/json
+
+{
+  "mobile": "9876543210",
+  "code": "123456"
+}
+
+### 3. Travel partner self-registration (creates a partner awaiting approval + the owner login)
+POST http://localhost:8080/api/v1/auth/partner/register
+Content-Type: application/json
+
+{
+  "mobile": "9123456780",
+  "ownerName": "Amit Kumar",
+  "businessName": "Jaha Travels"
+}
+
+### 4. Admin login (email + password)
+POST http://localhost:8080/api/v1/auth/admin/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "your-bootstrap-admin-password"
+}
+
+### 5. Refresh (rotates the refresh token; reusing an old one revokes the whole session)
+POST http://localhost:8080/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "PASTE_REFRESH_TOKEN"
+}
+
+### 6. Who am I
+GET http://localhost:8080/api/v1/auth/me
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### 7. Logout
+POST http://localhost:8080/api/v1/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "PASTE_REFRESH_TOKEN"
+}

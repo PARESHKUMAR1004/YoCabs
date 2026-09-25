@@ -7,6 +7,8 @@ import com.yocabs.api.modules.travelpartner.domain.repository.TravelPartnerRepos
 import com.yocabs.api.modules.triprequest.domain.model.TripRequest;
 import com.yocabs.api.modules.triprequest.domain.repository.TripRequestRepository;
 import com.yocabs.api.modules.triprequest.domain.valueobject.TripRequestId;
+import com.yocabs.api.shared.security.Actor;
+import com.yocabs.api.shared.security.CurrentActor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,6 +43,7 @@ public class TripEligibilityController {
 
     @GetMapping("/{tripRequestId}/eligible-options")
     public List<EligibleOptionResponse> getEligibleOptions(
+            @CurrentActor Actor actor,
             @PathVariable UUID tripRequestId
     ) {
 
@@ -57,6 +60,10 @@ public class TripEligibilityController {
                                                 + tripRequestId
                                 )
                         );
+
+        actor.requireTouristOwnerOrAdmin(
+                tripRequest.getTouristId().value()
+        );
 
         List<TravelPartner> candidates =
                 travelPartnerRepository

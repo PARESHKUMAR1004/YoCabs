@@ -1,0 +1,66 @@
+# Profile and Help & Support. Works with any signed-in role (TOURIST, PARTNER_*, DRIVER); ticket queue is ADMIN.
+
+@base = http://localhost:8080/api/v1
+@ticketId = PASTE_TICKET_ID
+@bookingId = PASTE_BOOKING_ID
+
+### My profile
+GET {{base}}/profile
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Update my profile (only supplied fields change; an empty email clears it)
+PUT {{base}}/profile
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "displayName": "Asha Das",
+  "email": "asha@example.com",
+  "preferredLanguage": "or"
+}
+
+### Raise a support ticket (bookingId is optional and must be your own booking)
+# category: BOOKING_ISSUE | PAYMENT_ISSUE | DRIVER_ISSUE | CANCELLATION_REFUND | SAFETY | OTHER
+POST {{base}}/support/tickets
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "category": "BOOKING_ISSUE",
+  "subject": "Driver went to the wrong pickup",
+  "description": "The driver waited at Gate 2 instead of Gate 4.",
+  "bookingId": "{{bookingId}}"
+}
+
+### My tickets
+GET {{base}}/support/tickets
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### One ticket with its conversation
+GET {{base}}/support/tickets/{{ticketId}}
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### Reply (admins may reply too; replying to a resolved ticket reopens it)
+POST {{base}}/support/tickets/{{ticketId}}/messages
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+Content-Type: application/json
+
+{
+  "body": "Thanks, this is still happening."
+}
+
+### ADMIN: ticket queue (?status=OPEN|IN_PROGRESS|RESOLVED|CLOSED)
+GET {{base}}/admin/support/tickets?status=OPEN
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+### ADMIN: take it / resolve / close
+POST {{base}}/admin/support/tickets/{{ticketId}}/assign
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+###
+POST {{base}}/admin/support/tickets/{{ticketId}}/resolve
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
+
+###
+POST {{base}}/admin/support/tickets/{{ticketId}}/close
+Authorization: Bearer {{$dotenv YOCABS_TOKEN}}
