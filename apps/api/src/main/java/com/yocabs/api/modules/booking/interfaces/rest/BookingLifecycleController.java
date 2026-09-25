@@ -41,19 +41,29 @@ public class BookingLifecycleController {
     @PostMapping("/start")
     public BookingResponse start(
             @CurrentActor Actor actor,
-            @PathVariable UUID bookingId
+            @PathVariable UUID bookingId,
+            @RequestBody TripCodeRequest request
     ) {
-        return assembler.toResponse(lifecycleService.startTrip(actor, bookingId), actor);
+        return assembler.toResponse(
+                lifecycleService.startTrip(actor, bookingId, request.code()), actor
+        );
     }
 
     @PostMapping("/complete")
     public BookingResponse complete(
             @CurrentActor Actor actor,
-            @PathVariable UUID bookingId
+            @PathVariable UUID bookingId,
+            @RequestBody TripCodeRequest request
     ) {
-        return assembler.toResponse(lifecycleService.completeTrip(actor, bookingId), actor);
+        return assembler.toResponse(
+                lifecycleService.completeTrip(actor, bookingId, request.code()), actor
+        );
     }
 
     public record AssignDriverRequest(UUID driverId) {
+    }
+
+    /** The code the tourist reads out: to start the trip, then again to complete it. */
+    public record TripCodeRequest(String code) {
     }
 }

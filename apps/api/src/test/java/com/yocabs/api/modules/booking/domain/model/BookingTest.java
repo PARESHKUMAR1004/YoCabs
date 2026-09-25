@@ -90,7 +90,7 @@ class BookingTest {
         Booking started = pending();
         started.confirm(Instant.now());
         started.assignDriver(UUID.randomUUID(), Instant.now());
-        started.startTrip(DAY, Instant.now());
+        started.startTrip(DAY, started.getStartCode(), Instant.now());
         assertThrows(IllegalStateException.class,
                 () -> started.cancel("late", Role.TOURIST, Instant.now()));
     }
@@ -106,14 +106,18 @@ class BookingTest {
         Booking booking = pending();
         booking.confirm(Instant.now());
 
-        assertThrows(IllegalStateException.class, () -> booking.startTrip(DAY, Instant.now()));
+        assertThrows(IllegalStateException.class,
+                () -> booking.startTrip(DAY, booking.getStartCode(), Instant.now()));
 
         booking.assignDriver(UUID.randomUUID(), Instant.now());
 
         assertThrows(IllegalStateException.class,
-                () -> booking.startTrip(DAY.minusDays(1), Instant.now()));
+                () -> booking.startTrip(DAY.minusDays(1), booking.getStartCode(), Instant.now()));
 
-        booking.startTrip(DAY, Instant.now());
+        assertThrows(IllegalArgumentException.class, () -> booking.startTrip(DAY, "wrong", Instant.now()));
+        assertThrows(IllegalArgumentException.class, () -> booking.startTrip(DAY, null, Instant.now()));
+
+        booking.startTrip(DAY, booking.getStartCode(), Instant.now());
         assertEquals(BookingStatus.IN_PROGRESS, booking.getStatus());
     }
 
@@ -122,11 +126,14 @@ class BookingTest {
         Booking booking = pending();
         booking.confirm(Instant.now());
 
-        assertThrows(IllegalStateException.class, () -> booking.completeTrip(Instant.now()));
+        assertThrows(IllegalStateException.class,
+                () -> booking.completeTrip(booking.getCompletionCode(), Instant.now()));
 
         booking.assignDriver(UUID.randomUUID(), Instant.now());
-        booking.startTrip(DAY, Instant.now());
-        booking.completeTrip(Instant.now());
+        booking.startTrip(DAY, booking.getStartCode(), Instant.now());
+        assertThrows(IllegalArgumentException.class,
+                () -> booking.completeTrip(booking.getStartCode(), Instant.now()));
+        booking.completeTrip(booking.getCompletionCode(), Instant.now());
 
         assertEquals(BookingStatus.COMPLETED, booking.getStatus());
         assertFalse(booking.blocksVehicle(Instant.now()));

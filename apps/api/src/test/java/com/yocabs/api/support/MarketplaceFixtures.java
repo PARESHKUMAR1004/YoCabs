@@ -105,11 +105,17 @@ public abstract class MarketplaceFixtures extends IntegrationTestBase {
     }
 
     /** Drives a confirmed booking through assignment, start and completion. */
-    protected void completeTrip(Partner partner, Driver driver, UUID bookingId) throws Exception {
+    protected void completeTrip(Partner partner, Driver driver, String tourist, UUID bookingId)
+            throws Exception {
         post("/api/v1/bookings/" + bookingId + "/driver", partner.ownerToken(),
                 "{\"driverId\":\"" + driver.id() + "\"}");
-        post("/api/v1/bookings/" + bookingId + "/start", driver.token(), "{}");
-        post("/api/v1/bookings/" + bookingId + "/complete", driver.token(), "{}");
+        post("/api/v1/bookings/" + bookingId + "/start", driver.token(), tripCode(tourist, bookingId));
+        post("/api/v1/bookings/" + bookingId + "/complete", driver.token(), tripCode(tourist, bookingId));
+    }
+
+    /** The request body a driver sends: the code the tourist can currently read in their app. */
+    protected String tripCode(String tourist, UUID bookingId) throws Exception {
+        return "{\"code\":\"" + json(get("/api/v1/bookings/" + bookingId, tourist), "$.tripCode") + "\"}";
     }
 
     protected Driver addDriver(Partner partner) throws Exception {

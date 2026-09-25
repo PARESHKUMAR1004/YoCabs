@@ -103,11 +103,15 @@ public class BookingLifecycleService {
     }
 
     @Transactional
-    public Booking startTrip(Actor actor, UUID bookingId) {
+    public Booking startTrip(Actor actor, UUID bookingId, String code) {
 
         Booking booking = requireOperator(actor, bookingId);
 
-        booking.startTrip(LocalDate.now(zone), Instant.now());
+        // Admins can start a trip for support cases; everyone else needs the tourist's code.
+        booking.startTrip(
+                LocalDate.now(zone),
+                actor.isAdmin() ? booking.getStartCode() : code,
+                Instant.now());
         Booking saved = bookings.update(booking);
 
         events.publishEvent(
@@ -125,11 +129,11 @@ public class BookingLifecycleService {
     }
 
     @Transactional
-    public Booking completeTrip(Actor actor, UUID bookingId) {
+    public Booking completeTrip(Actor actor, UUID bookingId, String code) {
 
         Booking booking = requireOperator(actor, bookingId);
 
-        booking.completeTrip(Instant.now());
+        booking.completeTrip(actor.isAdmin() ? booking.getCompletionCode() : code, Instant.now());
         Booking saved = bookings.update(booking);
 
         events.publishEvent(

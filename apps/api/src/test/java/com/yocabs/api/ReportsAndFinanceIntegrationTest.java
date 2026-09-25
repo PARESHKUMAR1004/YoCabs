@@ -36,7 +36,7 @@ class ReportsAndFinanceIntegrationTest extends MarketplaceFixtures {
         UUID completed = book(tourist, trip, partner.vehicleId(), null);
         BigDecimal total = decimal(get("/api/v1/bookings/" + completed, tourist), "$.totalAmount");
         pay(tourist, completed);
-        completeTrip(partner, driver, completed);
+        completeTrip(partner, driver, tourist, completed);
         post("/api/v1/bookings/" + completed + "/review", tourist, "{\"rating\":5,\"comment\":\"Great\"}");
 
         // A different trip on another day, cancelled by the partner (always refunded).

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -157,11 +158,27 @@ class MarketplaceFlowIntegrationTest extends MarketplaceFixtures {
         assertNotNull((Object) json(driverView, "$[0].tourist.mobile"));
         assertNull((Object) json(driverView, "$[0].driver"));
 
+        // The tourist reads the start code out; nobody else is shown it.
+        String startBody = tripCode(tourist, bookingId);
+        assertNull((Object) json(partnerView, "$.tripCode"));
+        assertNull((Object) json(driverView, "$[0].tripCode"));
+
+        assertEquals(400,
+                status(post("/api/v1/bookings/" + bookingId + "/start", driver.token(), "{\"code\":\"000000x\"}")));
+        assertEquals(400,
+                status(post("/api/v1/bookings/" + bookingId + "/start", driver.token(), "{}")));
         assertEquals("IN_PROGRESS",
-                json(post("/api/v1/bookings/" + bookingId + "/start", driver.token(), "{}"), "$.status"));
+                json(post("/api/v1/bookings/" + bookingId + "/start", driver.token(), startBody), "$.status"));
+
+        // While the trip runs the tourist is shown a different code, and the start code no longer works.
+        String completeBody = tripCode(tourist, bookingId);
+        assertNotEquals(startBody, completeBody);
+        assertEquals(400,
+                status(post("/api/v1/bookings/" + bookingId + "/complete", driver.token(), startBody)));
 
         assertEquals("COMPLETED",
-                json(post("/api/v1/bookings/" + bookingId + "/complete", driver.token(), "{}"), "$.status"));
+                json(post("/api/v1/bookings/" + bookingId + "/complete", driver.token(), completeBody), "$.status"));
+        assertNull((Object) json(get("/api/v1/bookings/" + bookingId, tourist), "$.tripCode"));
 
         // --- review and settlement ------------------------------------------------------------
         assertEquals(201,

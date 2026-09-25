@@ -30,7 +30,7 @@ Request files for every endpoint live in [`/http`](../../http); start with `http
 | `tripsearch` | `POST /trip-search`, and re-validation of a selected option at action time |
 | `triprequest` | Persisted tourist trip request (created only when the tourist commits) |
 | `negotiation` | One offer, one counter, accept/reject, configurable expiry |
-| `booking` | Booking with price snapshot, 25% token, hold expiry, double-booking protection, cancellation/refund policy, driver assignment, trip start/complete |
+| `booking` | Booking with price snapshot, 25% token, hold expiry, double-booking protection, cancellation/refund policy, driver assignment, trip start/complete (each needs a one-time code the tourist reads out; admins can override for support) |
 | `payment` | Gateway port, signed idempotent webhooks, append-only transaction ledger, refunds |
 | `driver`, `document` | Drivers; private document storage with admin verification |
 | `review` | One review per completed booking; partner rating |

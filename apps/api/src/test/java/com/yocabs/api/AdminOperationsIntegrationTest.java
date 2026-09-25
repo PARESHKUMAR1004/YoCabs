@@ -135,7 +135,7 @@ class AdminOperationsIntegrationTest extends MarketplaceFixtures {
         UUID booking = book(tourist, trip, partner.vehicleId(), null);
         BigDecimal total = decimal(get("/api/v1/bookings/" + booking, tourist), "$.totalAmount");
         pay(tourist, booking);
-        completeTrip(partner, driver, booking);
+        completeTrip(partner, driver, tourist, booking);
 
         // Token 25% - commission 2% = 23% of the fare is owed to the partner.
         BigDecimal token = total.multiply(new BigDecimal("0.25")).setScale(2, RoundingMode.HALF_UP);

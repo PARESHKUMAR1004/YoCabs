@@ -5,12 +5,17 @@ import com.yocabs.api.modules.triprequest.domain.model.TripType;
 import com.yocabs.api.shared.security.Role;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 public class Booking {
+
+    private static final SecureRandom CODE_RANDOM = new SecureRandom();
 
     private final UUID id;
     private final UUID tripRequestId;
@@ -33,6 +38,8 @@ public class Booking {
     private Instant holdExpiresAt;
     private UUID driverId;
     private final String idempotencyKey;
+    private final String startCode;
+    private final String completionCode;
     private String cancellationReason;
     private Role cancelledByRole;
     private final long version;
@@ -61,6 +68,8 @@ public class Booking {
             Instant holdExpiresAt,
             UUID driverId,
             String idempotencyKey,
+            String startCode,
+            String completionCode,
             String cancellationReason,
             Role cancelledByRole,
             long version,
@@ -88,6 +97,8 @@ public class Booking {
         this.holdExpiresAt = holdExpiresAt;
         this.driverId = driverId;
         this.idempotencyKey = idempotencyKey;
+        this.startCode = startCode;
+        this.completionCode = completionCode;
         this.cancellationReason = cancellationReason;
         this.cancelledByRole = cancelledByRole;
         this.version = version;
@@ -137,7 +148,7 @@ public class Booking {
                 negotiationId, tripType, startDate, endDate, passengerCount,
                 pickupDescription, destinationDescription, BookingStatus.PENDING_PAYMENT,
                 currency, totalAmount, tokenAmount, commissionAmount, priceComponents,
-                holdExpiresAt, null, idempotencyKey, null, null, 0L, now, now
+                holdExpiresAt, null, idempotencyKey, newTripCode(), newTripCode(), null, null, 0L, now, now
         );
     }
 
@@ -163,6 +174,8 @@ public class Booking {
             Instant holdExpiresAt,
             UUID driverId,
             String idempotencyKey,
+            String startCode,
+            String completionCode,
             String cancellationReason,
             Role cancelledByRole,
             long version,
@@ -173,8 +186,8 @@ public class Booking {
                 id, tripRequestId, touristId, travelPartnerId, vehicleId, negotiationId, tripType,
                 startDate, endDate, passengerCount, pickupDescription, destinationDescription,
                 status, currency, totalAmount, tokenAmount, commissionAmount, priceComponents,
-                holdExpiresAt, driverId, idempotencyKey, cancellationReason, cancelledByRole,
-                version, createdAt, updatedAt
+                holdExpiresAt, driverId, idempotencyKey, startCode, completionCode, cancellationReason,
+                cancelledByRole, version, createdAt, updatedAt
         );
     }
 
@@ -247,7 +260,7 @@ public class Booking {
         updatedAt = now;
     }
 
-    public void startTrip(LocalDate today, Instant now) {
+    public void startTrip(LocalDate today, String code, Instant now) {
         if (status != BookingStatus.CONFIRMED) {
             throw new IllegalStateException("Only a confirmed booking can be started");
         }
@@ -257,16 +270,44 @@ public class Booking {
         if (today.isBefore(startDate)) {
             throw new IllegalStateException("The trip cannot start before its travel date");
         }
+        requireCode(startCode, code);
         status = BookingStatus.IN_PROGRESS;
         updatedAt = now;
     }
 
-    public void completeTrip(Instant now) {
+    public void completeTrip(String code, Instant now) {
         if (status != BookingStatus.IN_PROGRESS) {
             throw new IllegalStateException("Only a trip in progress can be completed");
         }
+        requireCode(completionCode, code);
         status = BookingStatus.COMPLETED;
         updatedAt = now;
+    }
+
+    /**
+     * The code the tourist reads out at the moment the trip needs proof that they are present:
+     * the start code before the trip begins, the completion code while it runs, nothing otherwise.
+     */
+    public String codeToShowTourist() {
+        if (status == BookingStatus.CONFIRMED && driverId != null) {
+            return startCode;
+        }
+        return status == BookingStatus.IN_PROGRESS ? completionCode : null;
+    }
+
+    public String getStartCode() { return startCode; }
+    public String getCompletionCode() { return completionCode; }
+
+    private static void requireCode(String expected, String supplied) {
+        if (supplied == null || !MessageDigest.isEqual(
+                expected.getBytes(StandardCharsets.UTF_8),
+                supplied.trim().getBytes(StandardCharsets.UTF_8))) {
+            throw new IllegalArgumentException("The trip code is not correct");
+        }
+    }
+
+    private static String newTripCode() {
+        return String.format("%06d", CODE_RANDOM.nextInt(1_000_000));
     }
 
     public UUID getId() { return id; }

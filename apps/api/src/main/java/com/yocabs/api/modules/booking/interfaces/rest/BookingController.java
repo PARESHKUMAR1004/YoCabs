@@ -156,7 +156,8 @@ public class BookingController {
             PersonSummary driver,
             PersonSummary tourist,
             String cancellationReason,
-            Instant createdAt
+            Instant createdAt,
+            String tripCode
     ) {
 
         public static BookingResponse from(Booking booking, Actor viewer) {
@@ -192,7 +193,9 @@ public class BookingController {
                     null,
                     null,
                     booking.getCancellationReason(),
-                    booking.getCreatedAt()
+                    booking.getCreatedAt(),
+                    // Only the tourist is shown the code; the driver has to be told it in person.
+                    viewer.role() == Role.TOURIST ? booking.codeToShowTourist() : null
             );
         }
 
@@ -206,7 +209,7 @@ public class BookingController {
                     id, tripRequestId, travelPartnerId, partnerName, vehicleId, vehicle, negotiationId,
                     tripType, startDate, endDate, passengerCount, pickup, destination, status, currency,
                     totalAmount, tokenAmount, commissionAmount, priceComponents, holdExpiresAt,
-                    driverId, driver, tourist, cancellationReason, createdAt
+                    driverId, driver, tourist, cancellationReason, createdAt, tripCode
             );
         }
     }
