@@ -110,7 +110,7 @@ public abstract class MarketplaceFixtures extends IntegrationTestBase {
         post("/api/v1/bookings/" + bookingId + "/driver", partner.ownerToken(),
                 "{\"driverId\":\"" + driver.id() + "\"}");
         post("/api/v1/bookings/" + bookingId + "/start", driver.token(), tripCode(tourist, bookingId));
-        post("/api/v1/bookings/" + bookingId + "/complete", driver.token(), tripCode(tourist, bookingId));
+        post("/api/v1/bookings/" + bookingId + "/complete", driver.token(), "{}");
     }
 
     /** The request body a driver sends: the code the tourist can currently read in their app. */

@@ -129,11 +129,11 @@ public class BookingLifecycleService {
     }
 
     @Transactional
-    public Booking completeTrip(Actor actor, UUID bookingId, String code) {
+    public Booking completeTrip(Actor actor, UUID bookingId) {
 
         Booking booking = requireOperator(actor, bookingId);
 
-        booking.completeTrip(actor.isAdmin() ? booking.getCompletionCode() : code, Instant.now());
+        booking.completeTrip(Instant.now());
         Booking saved = bookings.update(booking);
 
         events.publishEvent(

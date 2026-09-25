@@ -4,6 +4,8 @@ import com.yocabs.api.modules.booking.domain.model.Booking;
 import com.yocabs.api.modules.tracking.application.service.TripLocationService;
 import com.yocabs.api.modules.tracking.application.service.TripLocationService.LiveTrip;
 import com.yocabs.api.modules.tracking.domain.model.TripLocation;
+import com.yocabs.api.modules.triprequest.domain.valueobject.Itinerary;
+import com.yocabs.api.modules.triprequest.domain.valueobject.Location;
 import com.yocabs.api.shared.security.Actor;
 import com.yocabs.api.shared.security.CurrentActor;
 import org.springframework.web.bind.annotation.*;
@@ -52,6 +54,15 @@ public class TripLocationController {
                 .latest(actor, bookingId)
                 .map(LocationResponse::from)
                 .orElse(null);
+    }
+
+    /** The journey itself (pickup, stops, destination) for drawing on a map. */
+    @GetMapping("/api/v1/bookings/{bookingId}/route")
+    public RouteResponse route(
+            @CurrentActor Actor actor,
+            @PathVariable UUID bookingId
+    ) {
+        return RouteResponse.from(tripLocationService.route(actor, bookingId));
     }
 
     /** The partner's own trips currently on the road. */
@@ -104,6 +115,28 @@ public class TripLocationController {
                     location.accuracyMetres(),
                     location.speedKph(),
                     location.recordedAt()
+            );
+        }
+    }
+
+    public record PlaceResponse(String description, Double latitude, Double longitude) {
+        static PlaceResponse from(Location location) {
+            return new PlaceResponse(
+                    location.description(), location.latitude(), location.longitude()
+            );
+        }
+    }
+
+    public record RouteResponse(
+            PlaceResponse pickup,
+            List<PlaceResponse> stops,
+            PlaceResponse destination
+    ) {
+        static RouteResponse from(Itinerary itinerary) {
+            return new RouteResponse(
+                    PlaceResponse.from(itinerary.pickup()),
+                    itinerary.stops().stream().map(PlaceResponse::from).toList(),
+                    PlaceResponse.from(itinerary.destination())
             );
         }
     }

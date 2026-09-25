@@ -1,6 +1,7 @@
 package com.yocabs.api.modules.payment.infrastructure.persistence;
 
 import com.yocabs.api.modules.payment.domain.model.Payment;
+import com.yocabs.api.modules.payment.domain.model.PaymentPurpose;
 import com.yocabs.api.modules.payment.domain.model.PaymentStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,6 +24,10 @@ public class PaymentEntity {
 
     @Column(name = "booking_id", nullable = false)
     private UUID bookingId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "purpose", nullable = false, length = 10)
+    private PaymentPurpose purpose;
 
     @Column(name = "amount", nullable = false)
     private BigDecimal amount;
@@ -64,6 +69,7 @@ public class PaymentEntity {
         PaymentEntity entity = new PaymentEntity();
         entity.id = payment.getId();
         entity.bookingId = payment.getBookingId();
+        entity.purpose = payment.getPurpose();
         entity.amount = payment.getAmount();
         entity.currency = payment.getCurrency();
         entity.gateway = payment.getGateway();
@@ -82,7 +88,7 @@ public class PaymentEntity {
 
     Payment toDomain() {
         return Payment.reconstitute(
-                id, bookingId, amount, currency, status, gateway, gatewayOrderId,
+                id, bookingId, purpose, amount, currency, status, gateway, gatewayOrderId,
                 gatewayPaymentId, refundedAmount, version, createdAt, updatedAt
         );
     }

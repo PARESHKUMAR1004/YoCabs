@@ -2,6 +2,7 @@ package com.yocabs.api.modules.payment.interfaces.rest;
 
 import com.yocabs.api.modules.payment.application.PaymentService;
 import com.yocabs.api.modules.payment.domain.model.Payment;
+import com.yocabs.api.modules.payment.domain.model.PaymentPurpose;
 import com.yocabs.api.modules.payment.domain.model.PaymentStatus;
 import com.yocabs.api.shared.security.Actor;
 import com.yocabs.api.shared.security.CurrentActor;
@@ -37,6 +38,16 @@ public class PaymentController {
         return PaymentResponse.from(paymentService.initiate(actor, bookingId));
     }
 
+    /** After the trip: the tourist chooses to pay the rest of the fare online. */
+    @PostMapping("/api/v1/bookings/{bookingId}/payments/balance")
+    @ResponseStatus(HttpStatus.CREATED)
+    public PaymentResponse initiateBalance(
+            @CurrentActor Actor actor,
+            @PathVariable UUID bookingId
+    ) {
+        return PaymentResponse.from(paymentService.initiateBalance(actor, bookingId));
+    }
+
     @GetMapping("/api/v1/bookings/{bookingId}/payments")
     public List<PaymentResponse> list(
             @CurrentActor Actor actor,
@@ -58,6 +69,7 @@ public class PaymentController {
     public record PaymentResponse(
             UUID id,
             UUID bookingId,
+            PaymentPurpose purpose,
             BigDecimal amount,
             String currency,
             PaymentStatus status,
@@ -71,6 +83,7 @@ public class PaymentController {
             return new PaymentResponse(
                     payment.getId(),
                     payment.getBookingId(),
+                    payment.getPurpose(),
                     payment.getAmount(),
                     payment.getCurrency(),
                     payment.getStatus(),

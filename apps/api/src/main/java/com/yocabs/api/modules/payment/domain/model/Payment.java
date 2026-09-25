@@ -8,6 +8,7 @@ public class Payment {
 
     private final UUID id;
     private final UUID bookingId;
+    private final PaymentPurpose purpose;
     private final BigDecimal amount;
     private final String currency;
     private PaymentStatus status;
@@ -22,6 +23,7 @@ public class Payment {
     private Payment(
             UUID id,
             UUID bookingId,
+            PaymentPurpose purpose,
             BigDecimal amount,
             String currency,
             PaymentStatus status,
@@ -35,6 +37,7 @@ public class Payment {
     ) {
         this.id = id;
         this.bookingId = bookingId;
+        this.purpose = purpose;
         this.amount = amount;
         this.currency = currency;
         this.status = status;
@@ -49,13 +52,14 @@ public class Payment {
 
     public static Payment initiate(
             UUID bookingId,
+            PaymentPurpose purpose,
             BigDecimal amount,
             String currency,
             String gateway,
             String gatewayOrderId
     ) {
-        if (bookingId == null) {
-            throw new IllegalArgumentException("Booking is required");
+        if (bookingId == null || purpose == null) {
+            throw new IllegalArgumentException("Booking and purpose are required");
         }
         if (amount == null || amount.signum() <= 0) {
             throw new IllegalArgumentException("Payment amount must be greater than zero");
@@ -67,7 +71,7 @@ public class Payment {
         Instant now = Instant.now();
 
         return new Payment(
-                UUID.randomUUID(), bookingId, amount, currency, PaymentStatus.INITIATED,
+                UUID.randomUUID(), bookingId, purpose, amount, currency, PaymentStatus.INITIATED,
                 gateway, gatewayOrderId, null, BigDecimal.ZERO, 0L, now, now
         );
     }
@@ -75,6 +79,7 @@ public class Payment {
     public static Payment reconstitute(
             UUID id,
             UUID bookingId,
+            PaymentPurpose purpose,
             BigDecimal amount,
             String currency,
             PaymentStatus status,
@@ -87,7 +92,7 @@ public class Payment {
             Instant updatedAt
     ) {
         return new Payment(
-                id, bookingId, amount, currency, status, gateway, gatewayOrderId,
+                id, bookingId, purpose, amount, currency, status, gateway, gatewayOrderId,
                 gatewayPaymentId, refundedAmount, version, createdAt, updatedAt
         );
     }
@@ -138,6 +143,7 @@ public class Payment {
 
     public UUID getId() { return id; }
     public UUID getBookingId() { return bookingId; }
+    public PaymentPurpose getPurpose() { return purpose; }
     public BigDecimal getAmount() { return amount; }
     public String getCurrency() { return currency; }
     public PaymentStatus getStatus() { return status; }

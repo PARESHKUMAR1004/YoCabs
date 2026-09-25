@@ -102,9 +102,6 @@ public class BookingEntity {
     @Column(name = "start_code", nullable = false, length = 6, updatable = false)
     private String startCode;
 
-    @Column(name = "completion_code", nullable = false, length = 6, updatable = false)
-    private String completionCode;
-
     @Column(name = "cancellation_reason", length = 500)
     private String cancellationReason;
 
@@ -146,7 +143,6 @@ public class BookingEntity {
         entity.commissionAmount = booking.getCommissionAmount();
         entity.idempotencyKey = booking.getIdempotencyKey();
         entity.startCode = booking.getStartCode();
-        entity.completionCode = booking.getCompletionCode();
         entity.createdAt = booking.getCreatedAt();
 
         for (PriceComponent component : booking.getPriceComponents()) {
@@ -178,7 +174,7 @@ public class BookingEntity {
                 priceComponents.stream()
                         .map(c -> new PriceComponent(c.getCode(), c.getDescription(), c.getAmount()))
                         .toList(),
-                holdExpiresAt, driverId, idempotencyKey, startCode, completionCode, cancellationReason,
+                holdExpiresAt, driverId, idempotencyKey, startCode, cancellationReason,
                 cancelledByRole, version, createdAt, updatedAt
         );
     }

@@ -1,6 +1,7 @@
 package com.yocabs.api.modules.payment.infrastructure.persistence;
 
 import com.yocabs.api.modules.payment.domain.model.Payment;
+import com.yocabs.api.modules.payment.domain.model.PaymentPurpose;
 import com.yocabs.api.modules.payment.domain.model.PaymentStatus;
 import com.yocabs.api.modules.payment.domain.model.PaymentTransaction;
 import com.yocabs.api.modules.payment.domain.repository.PaymentRepository;
@@ -63,15 +64,16 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Payment> findInitiatedByBookingId(UUID bookingId) {
-        return payments.findFirstByBookingIdAndStatus(bookingId, PaymentStatus.INITIATED)
+    public Optional<Payment> findInitiatedByBookingId(UUID bookingId, PaymentPurpose purpose) {
+        return payments
+                .findFirstByBookingIdAndPurposeAndStatus(bookingId, purpose, PaymentStatus.INITIATED)
                 .map(PaymentEntity::toDomain);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Payment> findPaidByBookingId(UUID bookingId) {
-        return payments.findFirstByBookingIdAndStatusIn(bookingId, PAID)
+    public Optional<Payment> findPaidByBookingId(UUID bookingId, PaymentPurpose purpose) {
+        return payments.findFirstByBookingIdAndPurposeAndStatusIn(bookingId, purpose, PAID)
                 .map(PaymentEntity::toDomain);
     }
 

@@ -1,5 +1,6 @@
 package com.yocabs.api.modules.payment.infrastructure.persistence;
 
+import com.yocabs.api.modules.payment.domain.model.PaymentPurpose;
 import com.yocabs.api.modules.payment.domain.model.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,10 +14,15 @@ public interface PaymentJpaRepository
 
     Optional<PaymentEntity> findByGatewayAndGatewayOrderId(String gateway, String gatewayOrderId);
 
-    Optional<PaymentEntity> findFirstByBookingIdAndStatus(UUID bookingId, PaymentStatus status);
-
-    Optional<PaymentEntity> findFirstByBookingIdAndStatusIn(
+    Optional<PaymentEntity> findFirstByBookingIdAndPurposeAndStatus(
             UUID bookingId,
+            PaymentPurpose purpose,
+            PaymentStatus status
+    );
+
+    Optional<PaymentEntity> findFirstByBookingIdAndPurposeAndStatusIn(
+            UUID bookingId,
+            PaymentPurpose purpose,
             Collection<PaymentStatus> statuses
     );
 

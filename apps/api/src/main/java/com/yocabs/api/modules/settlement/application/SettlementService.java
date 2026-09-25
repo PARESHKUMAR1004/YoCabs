@@ -4,6 +4,7 @@ import com.yocabs.api.modules.audit.application.AuditService;
 import com.yocabs.api.modules.settlement.domain.Payout;
 import com.yocabs.api.modules.settlement.domain.SettlementRepository;
 import com.yocabs.api.modules.settlement.domain.WalletEntry;
+import com.yocabs.api.shared.events.BalancePaid;
 import com.yocabs.api.shared.events.BookingCompleted;
 import com.yocabs.api.shared.events.NotificationRequested;
 import com.yocabs.api.shared.exception.ResourceNotFoundException;
@@ -30,6 +31,7 @@ import java.util.UUID;
 public class SettlementService {
 
     private static final String BOOKING = "BOOKING";
+    private static final String BOOKING_BALANCE = "BOOKING_BALANCE";
     private static final String PAYOUT = "PAYOUT";
 
     private final SettlementRepository settlement;
@@ -75,6 +77,41 @@ public class SettlementService {
                         type == WalletEntry.Type.CREDIT
                                 ? "Token collected exceeds commission on completed trip"
                                 : "Commission owed on completed trip"
+                )
+        );
+    }
+
+    /** The tourist paid the balance through YoCabs, so YoCabs owes that money to the partner. */
+    @EventListener
+    @Transactional
+    public void onBalancePaid(BalancePaid event) {
+
+        if (event.amount().signum() <= 0
+                || settlement.entryExists(BOOKING_BALANCE, event.bookingId(), WalletEntry.Type.CREDIT)) {
+            return;
+        }
+
+        settlement.lockPartner(event.travelPartnerId());
+
+        settlement.append(
+                WalletEntry.of(
+                        event.travelPartnerId(),
+                        WalletEntry.Type.CREDIT,
+                        event.amount(),
+                        BOOKING_BALANCE,
+                        event.bookingId(),
+                        "Balance paid online by the traveller"
+                )
+        );
+
+        events.publishEvent(
+                NotificationRequested.toPartner(
+                        event.travelPartnerId(),
+                        "BALANCE_PAID",
+                        "Balance paid online",
+                        "The traveller paid " + event.amount() + " online. It has been added to your wallet.",
+                        BOOKING,
+                        event.bookingId()
                 )
         );
     }

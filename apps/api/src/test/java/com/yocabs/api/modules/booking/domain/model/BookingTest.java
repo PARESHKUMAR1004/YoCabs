@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -126,14 +127,12 @@ class BookingTest {
         Booking booking = pending();
         booking.confirm(Instant.now());
 
-        assertThrows(IllegalStateException.class,
-                () -> booking.completeTrip(booking.getCompletionCode(), Instant.now()));
+        assertThrows(IllegalStateException.class, () -> booking.completeTrip(Instant.now()));
 
         booking.assignDriver(UUID.randomUUID(), Instant.now());
         booking.startTrip(DAY, booking.getStartCode(), Instant.now());
-        assertThrows(IllegalArgumentException.class,
-                () -> booking.completeTrip(booking.getStartCode(), Instant.now()));
-        booking.completeTrip(booking.getCompletionCode(), Instant.now());
+        assertNull(booking.codeToShowTourist());
+        booking.completeTrip(Instant.now());
 
         assertEquals(BookingStatus.COMPLETED, booking.getStatus());
         assertFalse(booking.blocksVehicle(Instant.now()));

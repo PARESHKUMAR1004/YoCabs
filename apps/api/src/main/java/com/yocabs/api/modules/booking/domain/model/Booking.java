@@ -39,7 +39,6 @@ public class Booking {
     private UUID driverId;
     private final String idempotencyKey;
     private final String startCode;
-    private final String completionCode;
     private String cancellationReason;
     private Role cancelledByRole;
     private final long version;
@@ -69,7 +68,6 @@ public class Booking {
             UUID driverId,
             String idempotencyKey,
             String startCode,
-            String completionCode,
             String cancellationReason,
             Role cancelledByRole,
             long version,
@@ -98,7 +96,6 @@ public class Booking {
         this.driverId = driverId;
         this.idempotencyKey = idempotencyKey;
         this.startCode = startCode;
-        this.completionCode = completionCode;
         this.cancellationReason = cancellationReason;
         this.cancelledByRole = cancelledByRole;
         this.version = version;
@@ -148,7 +145,7 @@ public class Booking {
                 negotiationId, tripType, startDate, endDate, passengerCount,
                 pickupDescription, destinationDescription, BookingStatus.PENDING_PAYMENT,
                 currency, totalAmount, tokenAmount, commissionAmount, priceComponents,
-                holdExpiresAt, null, idempotencyKey, newTripCode(), newTripCode(), null, null, 0L, now, now
+                holdExpiresAt, null, idempotencyKey, newTripCode(), null, null, 0L, now, now
         );
     }
 
@@ -175,7 +172,6 @@ public class Booking {
             UUID driverId,
             String idempotencyKey,
             String startCode,
-            String completionCode,
             String cancellationReason,
             Role cancelledByRole,
             long version,
@@ -186,7 +182,7 @@ public class Booking {
                 id, tripRequestId, touristId, travelPartnerId, vehicleId, negotiationId, tripType,
                 startDate, endDate, passengerCount, pickupDescription, destinationDescription,
                 status, currency, totalAmount, tokenAmount, commissionAmount, priceComponents,
-                holdExpiresAt, driverId, idempotencyKey, startCode, completionCode, cancellationReason,
+                holdExpiresAt, driverId, idempotencyKey, startCode, cancellationReason,
                 cancelledByRole, version, createdAt, updatedAt
         );
     }
@@ -275,28 +271,23 @@ public class Booking {
         updatedAt = now;
     }
 
-    public void completeTrip(String code, Instant now) {
+    public void completeTrip(Instant now) {
         if (status != BookingStatus.IN_PROGRESS) {
             throw new IllegalStateException("Only a trip in progress can be completed");
         }
-        requireCode(completionCode, code);
         status = BookingStatus.COMPLETED;
         updatedAt = now;
     }
 
     /**
-     * The code the tourist reads out at the moment the trip needs proof that they are present:
-     * the start code before the trip begins, the completion code while it runs, nothing otherwise.
+     * The code the tourist reads out to the driver to prove they are in the cab. It is shown once
+     * a driver is assigned and stops being shown when the trip starts.
      */
     public String codeToShowTourist() {
-        if (status == BookingStatus.CONFIRMED && driverId != null) {
-            return startCode;
-        }
-        return status == BookingStatus.IN_PROGRESS ? completionCode : null;
+        return status == BookingStatus.CONFIRMED && driverId != null ? startCode : null;
     }
 
     public String getStartCode() { return startCode; }
-    public String getCompletionCode() { return completionCode; }
 
     private static void requireCode(String expected, String supplied) {
         if (supplied == null || !MessageDigest.isEqual(

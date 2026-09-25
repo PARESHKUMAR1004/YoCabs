@@ -52,18 +52,15 @@ public class BookingLifecycleController {
     @PostMapping("/complete")
     public BookingResponse complete(
             @CurrentActor Actor actor,
-            @PathVariable UUID bookingId,
-            @RequestBody TripCodeRequest request
+            @PathVariable UUID bookingId
     ) {
-        return assembler.toResponse(
-                lifecycleService.completeTrip(actor, bookingId, request.code()), actor
-        );
+        return assembler.toResponse(lifecycleService.completeTrip(actor, bookingId), actor);
     }
 
     public record AssignDriverRequest(UUID driverId) {
     }
 
-    /** The code the tourist reads out: to start the trip, then again to complete it. */
+    /** The code the tourist reads out to the driver to start the trip. */
     public record TripCodeRequest(String code) {
     }
 }

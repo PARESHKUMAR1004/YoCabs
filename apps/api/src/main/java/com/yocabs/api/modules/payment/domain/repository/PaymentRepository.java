@@ -1,6 +1,7 @@
 package com.yocabs.api.modules.payment.domain.repository;
 
 import com.yocabs.api.modules.payment.domain.model.Payment;
+import com.yocabs.api.modules.payment.domain.model.PaymentPurpose;
 import com.yocabs.api.modules.payment.domain.model.PaymentTransaction;
 
 import java.util.List;
@@ -17,9 +18,9 @@ public interface PaymentRepository {
 
     Optional<Payment> findByGatewayOrderId(String gateway, String gatewayOrderId);
 
-    Optional<Payment> findInitiatedByBookingId(UUID bookingId);
+    Optional<Payment> findInitiatedByBookingId(UUID bookingId, PaymentPurpose purpose);
 
-    Optional<Payment> findPaidByBookingId(UUID bookingId);
+    Optional<Payment> findPaidByBookingId(UUID bookingId, PaymentPurpose purpose);
 
     List<Payment> findByBookingId(UUID bookingId);
 

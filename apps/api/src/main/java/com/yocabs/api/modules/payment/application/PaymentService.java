@@ -5,8 +5,10 @@ import com.yocabs.api.modules.booking.domain.model.Booking;
 import com.yocabs.api.modules.booking.domain.model.BookingStatus;
 import com.yocabs.api.modules.payment.application.PaymentGateway.WebhookEvent;
 import com.yocabs.api.modules.payment.domain.model.Payment;
+import com.yocabs.api.modules.payment.domain.model.PaymentPurpose;
 import com.yocabs.api.modules.payment.domain.model.PaymentTransaction;
 import com.yocabs.api.modules.payment.domain.repository.PaymentRepository;
+import com.yocabs.api.shared.events.BalancePaid;
 import com.yocabs.api.shared.events.NotificationRequested;
 import com.yocabs.api.shared.exception.ResourceNotFoundException;
 import com.yocabs.api.shared.security.Actor;
@@ -67,19 +69,52 @@ public class PaymentService {
             throw new IllegalStateException("This booking has no payable token amount");
         }
 
-        return payments.findInitiatedByBookingId(bookingId)
+        return openPayment(booking, PaymentPurpose.TOKEN, booking.getTokenAmount());
+    }
+
+    /**
+     * Starts (or resumes) payment of the rest of the fare once the trip is over. Paying online is
+     * optional: the tourist can still settle the balance with the partner directly.
+     */
+    @Transactional
+    public Payment initiateBalance(Actor actor, UUID bookingId) {
+
+        actor.requireRole(Role.TOURIST);
+
+        Booking booking = bookingService.get(actor, bookingId);
+
+        if (booking.getStatus() != BookingStatus.COMPLETED) {
+            throw new IllegalStateException("The balance can be paid once the trip is completed");
+        }
+
+        if (payments.findPaidByBookingId(bookingId, PaymentPurpose.BALANCE).isPresent()) {
+            throw new IllegalStateException("The balance has already been paid");
+        }
+
+        BigDecimal balance = booking.getTotalAmount().subtract(booking.getTokenAmount());
+
+        if (balance.signum() <= 0) {
+            throw new IllegalStateException("There is no balance left to pay");
+        }
+
+        return openPayment(booking, PaymentPurpose.BALANCE, balance);
+    }
+
+    private Payment openPayment(Booking booking, PaymentPurpose purpose, BigDecimal amount) {
+        return payments.findInitiatedByBookingId(booking.getId(), purpose)
                 .orElseGet(() -> {
                     String orderId =
                             gateway.createOrder(
-                                    booking.getId().toString(),
-                                    booking.getTokenAmount(),
+                                    booking.getId() + ":" + purpose,
+                                    amount,
                                     booking.getCurrency()
                             );
 
                     return payments.create(
                             Payment.initiate(
                                     booking.getId(),
-                                    booking.getTokenAmount(),
+                                    purpose,
+                                    amount,
                                     booking.getCurrency(),
                                     gateway.name(),
                                     orderId
@@ -150,6 +185,29 @@ public class PaymentService {
                 )
         );
 
+        if (payment.getPurpose() == PaymentPurpose.BALANCE) {
+            events.publishEvent(
+                    new BalancePaid(
+                            booking.getId(),
+                            booking.getTravelPartnerId(),
+                            booking.getTouristId(),
+                            payment.getCurrency(),
+                            payment.getAmount()
+                    )
+            );
+            events.publishEvent(
+                    NotificationRequested.toUser(
+                            booking.getTouristId(),
+                            "BALANCE_PAID",
+                            "Payment received",
+                            "Thank you. Your trip is fully paid.",
+                            "BOOKING",
+                            booking.getId()
+                    )
+            );
+            return;
+        }
+
         boolean confirmed = bookingService.confirmAfterPayment(payment.getBookingId());
 
         if (!confirmed) {
@@ -174,7 +232,8 @@ public class PaymentService {
     @Transactional
     public void refund(UUID bookingId, BigDecimal amount, String reason) {
 
-        Payment payment = payments.findPaidByBookingId(bookingId).orElse(null);
+        // Refunds cover the booking token; the balance is only ever paid after the trip is over.
+        Payment payment = payments.findPaidByBookingId(bookingId, PaymentPurpose.TOKEN).orElse(null);
 
         if (payment == null || amount == null || amount.signum() <= 0) {
             return;
@@ -236,7 +295,9 @@ public class PaymentService {
                         booking.getTouristId(),
                         "PAYMENT_FAILED",
                         "Payment failed",
-                        "Your payment did not go through. You can retry before the booking hold expires.",
+                        payment.getPurpose() == PaymentPurpose.BALANCE
+                                ? "Your payment did not go through. You can try again from your trip."
+                                : "Your payment did not go through. You can retry before the booking hold expires.",
                         "BOOKING",
                         booking.getId()
                 )

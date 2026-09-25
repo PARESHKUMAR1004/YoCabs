@@ -13,15 +13,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PaymentTest {
 
     private Payment payment() {
-        return Payment.initiate(UUID.randomUUID(), new BigDecimal("100.00"), "INR", "sandbox", "order_1");
+        return Payment.initiate(UUID.randomUUID(), PaymentPurpose.TOKEN, new BigDecimal("100.00"), "INR", "sandbox", "order_1");
     }
 
     @Test
     void aPaymentMustHavePositiveAmountAndAnOrder() {
         assertThrows(IllegalArgumentException.class,
-                () -> Payment.initiate(UUID.randomUUID(), BigDecimal.ZERO, "INR", "sandbox", "o"));
+                () -> Payment.initiate(UUID.randomUUID(), PaymentPurpose.TOKEN, BigDecimal.ZERO, "INR", "sandbox", "o"));
         assertThrows(IllegalArgumentException.class,
-                () -> Payment.initiate(UUID.randomUUID(), BigDecimal.TEN, "INR", "sandbox", " "));
+                () -> Payment.initiate(UUID.randomUUID(), PaymentPurpose.TOKEN, BigDecimal.TEN, "INR", "sandbox", " "));
     }
 
     @Test

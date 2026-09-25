@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -170,15 +169,30 @@ class MarketplaceFlowIntegrationTest extends MarketplaceFixtures {
         assertEquals("IN_PROGRESS",
                 json(post("/api/v1/bookings/" + bookingId + "/start", driver.token(), startBody), "$.status"));
 
-        // While the trip runs the tourist is shown a different code, and the start code no longer works.
-        String completeBody = tripCode(tourist, bookingId);
-        assertNotEquals(startBody, completeBody);
-        assertEquals(400,
-                status(post("/api/v1/bookings/" + bookingId + "/complete", driver.token(), startBody)));
-
-        assertEquals("COMPLETED",
-                json(post("/api/v1/bookings/" + bookingId + "/complete", driver.token(), completeBody), "$.status"));
+        // Once the trip is under way the code is no longer shown.
         assertNull((Object) json(get("/api/v1/bookings/" + bookingId, tourist), "$.tripCode"));
+
+        // The traveller can follow the car; strangers cannot.
+        assertEquals(200, status(post("/api/v1/bookings/" + bookingId + "/location", driver.token(),
+                "{\"latitude\":20.27,\"longitude\":85.84}")));
+        MvcResult followed = get("/api/v1/bookings/" + bookingId + "/location", tourist);
+        assertEquals(200, status(followed));
+        assertEquals(20.27, ((Number) json(followed, "$.latitude")).doubleValue(), 0.0001);
+        assertEquals(403, status(get("/api/v1/bookings/" + bookingId + "/location", otherTourist)));
+
+        // The map needs the journey's end points, and only people on the booking may have them.
+        MvcResult route = get("/api/v1/bookings/" + bookingId + "/route", tourist);
+        assertEquals(200, status(route));
+        assertNotNull((Object) json(route, "$.pickup.description"));
+        assertNotNull((Object) json(route, "$.destination.description"));
+        assertEquals(403, status(get("/api/v1/bookings/" + bookingId + "/route", otherTourist)));
+
+        // The balance cannot be paid before the trip is over.
+        assertEquals(409, status(post("/api/v1/bookings/" + bookingId + "/payments/balance", tourist, "{}")));
+
+        // The driver completes the trip on arrival: no code needed.
+        assertEquals("COMPLETED",
+                json(post("/api/v1/bookings/" + bookingId + "/complete", driver.token(), "{}"), "$.status"));
 
         // --- review and settlement ------------------------------------------------------------
         assertEquals(201,
@@ -198,6 +212,22 @@ class MarketplaceFlowIntegrationTest extends MarketplaceFixtures {
                         .subtract(counter.multiply(new BigDecimal("0.10")).setScale(2, RoundingMode.HALF_UP));
         assertEquals(0, expected.compareTo(decimal(wallet, "$.balance")));
         assertEquals("CREDIT", json(wallet, "$.entries[0].type"));
+
+        // --- the traveller pays the rest of the fare online ------------------------------------
+        MvcResult balance = post("/api/v1/bookings/" + bookingId + "/payments/balance", tourist, "{}");
+        assertEquals(201, status(balance));
+        assertEquals("BALANCE", json(balance, "$.purpose"));
+        BigDecimal balanceDue = counter.subtract(
+                counter.multiply(new BigDecimal("0.25")).setScale(2, RoundingMode.HALF_UP));
+        assertEquals(0, balanceDue.compareTo(decimal(balance, "$.amount")));
+
+        post("/api/v1/dev/payments/" + json(balance, "$.id") + "/simulate", tourist,
+                "{\"outcome\":\"SUCCESS\"}");
+
+        // Paid once only, and the money YoCabs now holds is owed to the partner.
+        assertEquals(409, status(post("/api/v1/bookings/" + bookingId + "/payments/balance", tourist, "{}")));
+        MvcResult afterBalance = get("/api/v1/travel-partners/" + partner.id() + "/wallet", partner.ownerToken());
+        assertEquals(0, expected.add(balanceDue).compareTo(decimal(afterBalance, "$.balance")));
     }
 
     @Test

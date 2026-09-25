@@ -1,10 +1,15 @@
 package com.yocabs.api.modules.tracking.application.service;
 
+import com.yocabs.api.modules.booking.application.BookingService;
 import com.yocabs.api.modules.booking.domain.model.Booking;
 import com.yocabs.api.modules.booking.domain.model.BookingStatus;
 import com.yocabs.api.modules.booking.domain.repository.BookingRepository;
 import com.yocabs.api.modules.tracking.domain.model.TripLocation;
 import com.yocabs.api.modules.tracking.domain.repository.TripLocationRepository;
+import com.yocabs.api.modules.triprequest.domain.model.TripRequest;
+import com.yocabs.api.modules.triprequest.domain.repository.TripRequestRepository;
+import com.yocabs.api.modules.triprequest.domain.valueobject.Itinerary;
+import com.yocabs.api.modules.triprequest.domain.valueobject.TripRequestId;
 import com.yocabs.api.shared.security.Actor;
 import com.yocabs.api.shared.security.Role;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,7 +32,7 @@ import java.util.stream.Collectors;
  *
  * Location is personal data, so it is fenced in three ways: a driver may only report against their
  * own trip, positions are only accepted and served while that trip is actually in progress, and
- * only the partner running the trip or an administrator may read one. Nothing is kept beyond the
+ * only the traveller on it, the partner running it, or an administrator may read one. Nothing is kept beyond the
  * current position, and a sweep clears anything a finished trip left behind.
  */
 @Service
@@ -37,15 +42,23 @@ public class TripLocationService {
 
     private final BookingRepository bookings;
 
+    private final BookingService bookingService;
+
+    private final TripRequestRepository tripRequests;
+
     private final Duration staleAfter;
 
     public TripLocationService(
             TripLocationRepository locations,
             BookingRepository bookings,
+            BookingService bookingService,
+            TripRequestRepository tripRequests,
             @Value("${yocabs.tracking.stale-after-minutes:180}") long staleAfterMinutes
     ) {
         this.locations = locations;
         this.bookings = bookings;
+        this.bookingService = bookingService;
+        this.tripRequests = tripRequests;
         this.staleAfter = Duration.ofMinutes(staleAfterMinutes);
     }
 
@@ -86,7 +99,7 @@ public class TripLocationService {
         );
     }
 
-    /** The partner running the trip, or an administrator, sees where the car is. */
+    /** The traveller on the trip, the partner running it, or an administrator sees where the car is. */
     @Transactional(readOnly = true)
     public Optional<TripLocation> latest(
             Actor actor,
@@ -101,6 +114,20 @@ public class TripLocationService {
         }
 
         return locations.findByBookingId(bookingId);
+    }
+
+    /**
+     * Where the trip starts, stops and ends, so a map can draw the journey the car is on. Anyone
+     * who may see the booking may see this: it is what they already booked.
+     */
+    @Transactional(readOnly = true)
+    public Itinerary route(Actor actor, UUID bookingId) {
+        Booking booking = bookingService.get(actor, bookingId);
+
+        return tripRequests
+                .findById(new TripRequestId(booking.getTripRequestId()))
+                .map(TripRequest::getItinerary)
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + bookingId));
     }
 
     /** Every trip a partner currently has on the road, with its last known position. */
@@ -182,10 +209,14 @@ public class TripLocationService {
                 );
     }
 
-    /** Only the partner running the trip and administrators may watch a driver. */
+    /** The partner running the trip, administrators, and the traveller on it may watch the car. */
     private void requireWatcher(Actor actor, Booking booking) {
 
         if (actor.isAdmin()) {
+            return;
+        }
+
+        if (actor.role() == Role.TOURIST && actor.userId().equals(booking.getTouristId())) {
             return;
         }
 
@@ -195,7 +226,7 @@ public class TripLocationService {
         }
 
         throw new AccessDeniedException(
-                "Only the travel partner and administrators can follow a trip"
+                "Only the traveller, the travel partner and administrators can follow a trip"
         );
     }
 
