@@ -68,6 +68,49 @@ The `prod` profile **refuses to start** with the development JWT secret or the s
 | `yocabs.negotiation.expiry-minutes` | Offer / counter-offer validity |
 | `yocabs.verification.required-partner-documents` | Document types that must be approved before a partner can go live |
 
+## Hosted testing (Railway)
+
+A hosted deployment for testers runs the **`staging`** profile (`application-staging.yml`). It is
+production-shaped (real database, secrets from the environment, HTTPS in front) but deliberately
+keeps two development conveniences: one-time codes are written to the log, and the sandbox payment
+gateway stays available. The `prod` profile refuses to start with either. **Never point real
+customers at `staging`.**
+
+One Railway project, two services:
+
+| Service | Notes |
+| --- | --- |
+| `Postgres` | Railway's managed Postgres. |
+| `api` | Built from `Dockerfile.railway` (compiles from source; `Dockerfile` stays for CI, which packages a pre-built jar). |
+
+Set on `api` (database values use Railway references, so the password is never copied):
+
+```
+RAILWAY_DOCKERFILE_PATH=Dockerfile.railway   # required: railway.json's dockerfilePath is ignored
+SPRING_PROFILES_ACTIVE=staging
+DB_URL=jdbc:postgresql://${{Postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/${{Postgres.PGDATABASE}}
+DB_USER=${{Postgres.PGUSER}}
+DB_PASSWORD=${{Postgres.PGPASSWORD}}
+YOCABS_JWT_SECRET=<64+ random characters>
+YOCABS_BOOTSTRAP_ADMIN_EMAIL=<admin email>
+YOCABS_BOOTSTRAP_ADMIN_PASSWORD=<strong password>
+YOCABS_ROUTING_PROVIDER=osrm                 # osrm | google | haversine
+YOCABS_CORS_ALLOWED_ORIGINS=<admin console origin, once it is hosted>
+```
+
+Deploy from this directory with `railway up -s api --ci`, then `railway domain -s api` for the
+HTTPS URL. Migrations run on startup. To read a tester's one-time code, use
+`railway logs -s api` and look for `[DEV OTP]`.
+
+Known limits of the hosted setup:
+
+- **Uploaded documents live on the container's disk and are lost on every redeploy.** Attach a
+  volume (and run the container as a user that can write to it) or add object storage before
+  testers upload anything they need to keep.
+- OSRM's public demo server is fine for testing, not for launch. Use `google` (Routes API, billed,
+  server-side key `YOCABS_GOOGLE_ROUTES_API_KEY`) or a self-hosted OSRM.
+- `railway.json` uses the deprecated config-as-code format. It still works until 2026-12-01.
+
 ## Business rules (settlement and refund rules confirmed by the product owner, 2026-09-19)
 
 These are explicit, isolated, configurable rules:
