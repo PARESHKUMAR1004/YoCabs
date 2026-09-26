@@ -28,6 +28,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
 	runtimeOnly("io.micrometer:micrometer-registry-prometheus")
+	// Reads the orientation a phone camera records, so uploaded photos are stood upright.
+	implementation("com.drewnoakes:metadata-extractor:2.19.0")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")

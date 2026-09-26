@@ -70,9 +70,9 @@ public abstract class MarketplaceFixtures extends IntegrationTestBase {
         return new Partner(partnerId, ownerMobile, ownerToken, vehicleId, registrationNumber);
     }
 
-    protected static final byte[] PNG_BYTES = {
-            (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52
-    };
+    protected static final byte[] PNG_BYTES = java.util.Base64.getDecoder().decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+    );
 
     protected static final byte[] PDF_BYTES =
             "%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF".getBytes(java.nio.charset.StandardCharsets.US_ASCII);

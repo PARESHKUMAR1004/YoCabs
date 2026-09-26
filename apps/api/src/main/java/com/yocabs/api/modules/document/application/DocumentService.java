@@ -36,7 +36,9 @@ public class DocumentService {
     private final AuditService auditService;
     private final ApplicationEventPublisher events;
     private final long maxBytes;
+    private final long maxPhotoBytes;
     private final boolean autoApproveVehiclePhotos;
+    private final ImageOptimizer imageOptimizer;
 
     public DocumentService(
             DocumentRepository documents,
@@ -47,7 +49,9 @@ public class DocumentService {
             AuditService auditService,
             ApplicationEventPublisher events,
             @Value("${yocabs.storage.max-document-bytes:10485760}") long maxBytes,
-            @Value("${yocabs.document.auto-approve-vehicle-photos:true}") boolean autoApproveVehiclePhotos
+            @Value("${yocabs.storage.max-photo-bytes:41943040}") long maxPhotoBytes,
+            @Value("${yocabs.document.auto-approve-vehicle-photos:true}") boolean autoApproveVehiclePhotos,
+            ImageOptimizer imageOptimizer
     ) {
         this.documents = documents;
         this.storage = storage;
@@ -57,7 +61,9 @@ public class DocumentService {
         this.auditService = auditService;
         this.events = events;
         this.maxBytes = maxBytes;
+        this.maxPhotoBytes = maxPhotoBytes;
         this.autoApproveVehiclePhotos = autoApproveVehiclePhotos;
+        this.imageOptimizer = imageOptimizer;
     }
 
     @Transactional
@@ -77,9 +83,12 @@ public class DocumentService {
             throw new IllegalArgumentException("The document is empty");
         }
 
-        if (content.length > maxBytes) {
+        // Photos are shrunk on arrival, so they may be far bigger than a scanned certificate.
+        long limit = type == Document.Type.VEHICLE_PHOTO ? maxPhotoBytes : maxBytes;
+
+        if (content.length > limit) {
             throw new IllegalArgumentException(
-                    "The document exceeds the maximum size of " + (maxBytes / 1024 / 1024) + " MB"
+                    "The file exceeds the maximum size of " + (limit / 1024 / 1024) + " MB"
             );
         }
 
@@ -96,6 +105,12 @@ public class DocumentService {
 
         if (extension == null || !matchesSignature(content, extension)) {
             throw new IllegalArgumentException("Only PDF, JPEG and PNG documents are accepted");
+        }
+
+        if (type == Document.Type.VEHICLE_PHOTO) {
+            content = imageOptimizer.optimize(content);
+            contentType = "image/jpeg";
+            extension = "jpg";
         }
 
         String storageKey = ownerType.name().toLowerCase() + "/" + UUID.randomUUID() + "." + extension;

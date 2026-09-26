@@ -203,8 +203,9 @@ class ProfileAndVehicleDetailsIntegrationTest extends MarketplaceFixtures {
 
         MvcResult served = get("/api/v1/vehicles/" + partner.vehicleId() + "/photos/" + photoId, null);
         assertEquals(200, status(served));
-        assertEquals("image/png", served.getResponse().getContentType());
-        assertEquals(PNG_BYTES.length, served.getResponse().getContentAsByteArray().length);
+        // Photos are re-encoded as JPEG on arrival.
+        assertEquals("image/jpeg", served.getResponse().getContentType());
+        assertEquals((byte) 0xFF, served.getResponse().getContentAsByteArray()[0]);
         assertEquals("nosniff", served.getResponse().getHeader("X-Content-Type-Options"));
 
         // The URL is bound to the vehicle it was approved for.
