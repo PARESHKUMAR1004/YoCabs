@@ -134,6 +134,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/trip-search").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhook").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/vehicles/*/photos/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/explore/**").permitAll()
                         .requestMatchers("/actuator/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .anyRequest().authenticated())
