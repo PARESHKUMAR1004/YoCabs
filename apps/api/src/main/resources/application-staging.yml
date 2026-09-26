@@ -20,6 +20,18 @@ spring:
 server:
   shutdown: graceful
   port: ${PORT:8080}
+  tomcat:
+    # One line per request in the service log (method, path, status, bytes, time, size sent), so
+    # a report such as "the upload fails" can be matched to what the server actually saw. Paths
+    # only: no query strings, no headers that carry credentials.
+    accesslog:
+      enabled: true
+      directory: /dev
+      prefix: stdout
+      suffix: ""
+      file-date-format: ""
+      buffered: false
+      pattern: "ACCESS %m %U %s %b %Dms in=%{Content-Length}i"
 
 management:
   endpoint:
