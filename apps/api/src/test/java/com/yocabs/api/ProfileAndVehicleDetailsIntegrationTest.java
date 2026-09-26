@@ -177,7 +177,7 @@ class ProfileAndVehicleDetailsIntegrationTest extends MarketplaceFixtures {
     }
 
     @Test
-    void vehiclePhotosAreShownToTouristsOnlyAfterAdminApproval() throws Exception {
+    void vehiclePhotosGoLiveOnUploadAndAnAdminCanTakeThemDown() throws Exception {
         Partner partner = createActivePartner("SUV", 7);
         Partner other = createActivePartner("SEDAN", 4);
         String admin = adminToken();
@@ -193,13 +193,9 @@ class ProfileAndVehicleDetailsIntegrationTest extends MarketplaceFixtures {
         UUID photoId = uploadFile(partner.ownerToken(), "VEHICLE", partner.vehicleId(),
                 "VEHICLE_PHOTO", "front.png", "image/png", PNG_BYTES);
 
-        // Pending: the owner sees it, tourists and the public URL do not.
+        // Live straight away: the owner sees it, and so do tourists.
         String profilePath = "/api/v1/travel-partners/" + partner.id() + "/vehicles/" + partner.vehicleId() + "/profile";
-        assertEquals("PENDING", json(get(profilePath, partner.ownerToken()), "$.photos[0].status"));
-        assertEquals(0, ((List<?>) searchOption(partner.vehicleId(), "photos")).size());
-        assertEquals(404, status(get("/api/v1/vehicles/" + partner.vehicleId() + "/photos/" + photoId, null)));
-
-        assertEquals(200, status(post("/api/v1/admin/documents/" + photoId + "/approve", admin, "{}")));
+        assertEquals("APPROVED", json(get(profilePath, partner.ownerToken()), "$.photos[0].status"));
 
         List<?> photos = (List<?>) searchOption(partner.vehicleId(), "photos");
         assertEquals(1, photos.size());
@@ -226,6 +222,13 @@ class ProfileAndVehicleDetailsIntegrationTest extends MarketplaceFixtures {
                 "RC_BOOK", "rc.pdf", "application/pdf", PDF_BYTES);
         post("/api/v1/admin/documents/" + rcBook + "/approve", admin, "{}");
         assertEquals(404, status(get("/api/v1/vehicles/" + partner.vehicleId() + "/photos/" + rcBook, null)));
+
+        // The owner can remove a photo; nobody else can, and legal documents are not removable.
+        assertEquals(403, status(delete("/api/v1/documents/" + photoId, other.ownerToken())));
+        assertEquals(409, status(delete("/api/v1/documents/" + rcBook, partner.ownerToken())));
+        assertEquals(204, status(delete("/api/v1/documents/" + photoId, partner.ownerToken())));
+        assertEquals(404, status(get("/api/v1/vehicles/" + partner.vehicleId() + "/photos/" + photoId, null)));
+        assertEquals(0, ((List<?>) searchOption(partner.vehicleId(), "photos")).size());
     }
 
     private MvcResult put(String path, String token, String json) throws Exception {

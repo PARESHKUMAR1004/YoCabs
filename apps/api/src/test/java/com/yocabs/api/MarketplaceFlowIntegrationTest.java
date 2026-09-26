@@ -178,6 +178,9 @@ class MarketplaceFlowIntegrationTest extends MarketplaceFixtures {
         MvcResult followed = get("/api/v1/bookings/" + bookingId + "/location", tourist);
         assertEquals(200, status(followed));
         assertEquals(20.27, ((Number) json(followed, "$.latitude")).doubleValue(), 0.0001);
+        // ...and how far the car still has to go.
+        assertTrue(((Number) json(followed, "$.remainingDistanceKm")).doubleValue() >= 0);
+        assertTrue(((Number) json(followed, "$.remainingMinutes")).intValue() >= 1);
         assertEquals(403, status(get("/api/v1/bookings/" + bookingId + "/location", otherTourist)));
 
         // The map needs the journey's end points, and only people on the booking may have them.

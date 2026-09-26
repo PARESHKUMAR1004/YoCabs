@@ -46,6 +46,8 @@ public class TripLocationService {
 
     private final TripRequestRepository tripRequests;
 
+    private final TripEstimateService estimates;
+
     private final Duration staleAfter;
 
     public TripLocationService(
@@ -53,12 +55,14 @@ public class TripLocationService {
             BookingRepository bookings,
             BookingService bookingService,
             TripRequestRepository tripRequests,
+            TripEstimateService estimates,
             @Value("${yocabs.tracking.stale-after-minutes:180}") long staleAfterMinutes
     ) {
         this.locations = locations;
         this.bookings = bookings;
         this.bookingService = bookingService;
         this.tripRequests = tripRequests;
+        this.estimates = estimates;
         this.staleAfter = Duration.ofMinutes(staleAfterMinutes);
     }
 
@@ -130,6 +134,24 @@ public class TripLocationService {
                 .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + bookingId));
     }
 
+    /** The car's position with how far and how long it still has to go, for the trip's viewers. */
+    @Transactional(readOnly = true)
+    public Optional<Tracked> track(Actor actor, UUID bookingId) {
+        Booking booking = requireBooking(bookingId);
+
+        requireWatcher(actor, booking);
+
+        if (booking.getStatus() != BookingStatus.IN_PROGRESS) {
+            return Optional.empty();
+        }
+
+        return locations
+                .findByBookingId(bookingId)
+                .map(location ->
+                        new Tracked(location, estimates.estimate(booking, location).orElse(null))
+                );
+    }
+
     /** Every trip a partner currently has on the road, with its last known position. */
     @Transactional(readOnly = true)
     public List<LiveTrip> liveTripsForPartner(
@@ -167,9 +189,10 @@ public class TripLocationService {
     @Transactional
     public void forgetStaleLocations() {
 
-        locations.deleteRecordedBefore(
-                Instant.now().minus(staleAfter)
-        );
+        Instant cutoff = Instant.now().minus(staleAfter);
+
+        locations.deleteRecordedBefore(cutoff);
+        estimates.forgetOlderThan(cutoff);
     }
 
     private List<LiveTrip> toLiveTrips(List<Booking> inProgress) {
@@ -228,6 +251,12 @@ public class TripLocationService {
         throw new AccessDeniedException(
                 "Only the traveller, the travel partner and administrators can follow a trip"
         );
+    }
+
+    public record Tracked(
+            TripLocation location,
+            TripEstimateService.Estimate estimate
+    ) {
     }
 
     public record LiveTrip(

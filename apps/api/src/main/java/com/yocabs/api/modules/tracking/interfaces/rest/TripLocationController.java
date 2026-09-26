@@ -1,6 +1,7 @@
 package com.yocabs.api.modules.tracking.interfaces.rest;
 
 import com.yocabs.api.modules.booking.domain.model.Booking;
+import com.yocabs.api.modules.tracking.application.service.TripEstimateService;
 import com.yocabs.api.modules.tracking.application.service.TripLocationService;
 import com.yocabs.api.modules.tracking.application.service.TripLocationService.LiveTrip;
 import com.yocabs.api.modules.tracking.domain.model.TripLocation;
@@ -51,8 +52,8 @@ public class TripLocationController {
             @PathVariable UUID bookingId
     ) {
         return tripLocationService
-                .latest(actor, bookingId)
-                .map(LocationResponse::from)
+                .track(actor, bookingId)
+                .map(tracked -> LocationResponse.from(tracked.location(), tracked.estimate()))
                 .orElse(null);
     }
 
@@ -105,16 +106,26 @@ public class TripLocationController {
             double longitude,
             Double accuracyMetres,
             Double speedKph,
-            Instant recordedAt
+            Instant recordedAt,
+            Double remainingDistanceKm,
+            Integer remainingMinutes,
+            Double tripDistanceKm
     ) {
         static LocationResponse from(TripLocation location) {
+            return from(location, null);
+        }
+
+        static LocationResponse from(TripLocation location, TripEstimateService.Estimate estimate) {
             return new LocationResponse(
                     location.bookingId(),
                     location.latitude(),
                     location.longitude(),
                     location.accuracyMetres(),
                     location.speedKph(),
-                    location.recordedAt()
+                    location.recordedAt(),
+                    estimate == null ? null : estimate.remainingKm(),
+                    estimate == null ? null : estimate.remainingMinutes(),
+                    estimate == null ? null : estimate.tripKm()
             );
         }
     }

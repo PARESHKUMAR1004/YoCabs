@@ -147,7 +147,10 @@ public class Document {
     }
 
     public void reject(UUID adminId, String reason) {
-        requirePending();
+        // Vehicle photos go live on upload, so an admin must still be able to take one down.
+        if (!(status == Status.APPROVED && type == Type.VEHICLE_PHOTO)) {
+            requirePending();
+        }
         if (reason == null || reason.isBlank()) {
             throw new IllegalArgumentException("A rejection reason is required");
         }

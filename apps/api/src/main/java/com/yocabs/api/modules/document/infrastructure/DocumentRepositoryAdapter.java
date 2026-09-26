@@ -40,6 +40,13 @@ public class DocumentRepositoryAdapter implements DocumentRepository {
     }
 
     @Override
+    @Transactional
+    public void delete(UUID id) {
+        jpa.deleteById(id);
+        jpa.flush();
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Optional<Document> findById(UUID id) {
         return jpa.findById(id).map(DocumentEntity::toDomain);

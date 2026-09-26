@@ -43,6 +43,15 @@ public class LocalDocumentStorage implements DocumentStorage {
         }
     }
 
+    @Override
+    public void delete(String key) {
+        try {
+            Files.deleteIfExists(resolve(key));
+        } catch (IOException exception) {
+            throw new UncheckedIOException("Unable to delete document", exception);
+        }
+    }
+
     private Path resolve(String key) {
         Path resolved = root.resolve(key).normalize();
 

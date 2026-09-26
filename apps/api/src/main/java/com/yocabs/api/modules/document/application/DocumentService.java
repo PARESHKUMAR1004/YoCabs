@@ -36,6 +36,7 @@ public class DocumentService {
     private final AuditService auditService;
     private final ApplicationEventPublisher events;
     private final long maxBytes;
+    private final boolean autoApproveVehiclePhotos;
 
     public DocumentService(
             DocumentRepository documents,
@@ -45,7 +46,8 @@ public class DocumentService {
             DriverRepository drivers,
             AuditService auditService,
             ApplicationEventPublisher events,
-            @Value("${yocabs.storage.max-document-bytes:5242880}") long maxBytes
+            @Value("${yocabs.storage.max-document-bytes:10485760}") long maxBytes,
+            @Value("${yocabs.document.auto-approve-vehicle-photos:true}") boolean autoApproveVehiclePhotos
     ) {
         this.documents = documents;
         this.storage = storage;
@@ -55,6 +57,7 @@ public class DocumentService {
         this.auditService = auditService;
         this.events = events;
         this.maxBytes = maxBytes;
+        this.autoApproveVehiclePhotos = autoApproveVehiclePhotos;
     }
 
     @Transactional
@@ -99,12 +102,38 @@ public class DocumentService {
 
         storage.store(storageKey, content);
 
-        return documents.create(
+        Document document =
                 Document.upload(
                         ownerType, ownerId, type, storageKey, sanitize(filename),
                         contentType.toLowerCase(), content.length, expiryDate, actor.userId()
-                )
-        );
+                );
+
+        // A vehicle photo is shown to travellers straight away (the partner is already verified);
+        // an admin can still take it down. Legal documents always wait for review.
+        if (type == Document.Type.VEHICLE_PHOTO && autoApproveVehiclePhotos) {
+            document.approve(actor.userId());
+        }
+
+        return documents.create(document);
+    }
+
+    /** A partner removes a vehicle photo they no longer want shown. Other documents are kept. */
+    @Transactional
+    public void deleteVehiclePhoto(Actor actor, UUID documentId) {
+
+        Document document = load(documentId);
+
+        if (document.getType() != Document.Type.VEHICLE_PHOTO) {
+            throw new IllegalStateException("Only vehicle photos can be removed");
+        }
+
+        requireOwnerAccess(actor, document.getOwnerType(), document.getOwnerId());
+
+        storage.delete(document.getStorageKey());
+        documents.delete(document.getId());
+
+        auditService.record(actor, "VEHICLE_PHOTO_REMOVED", "DOCUMENT", document.getId(),
+                document.getOwnerType() + ":" + document.getOwnerId());
     }
 
     @Transactional(readOnly = true)

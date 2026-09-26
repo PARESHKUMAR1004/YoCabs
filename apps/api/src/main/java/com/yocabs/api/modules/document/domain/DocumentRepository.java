@@ -11,6 +11,8 @@ public interface DocumentRepository {
 
     Document update(Document document);
 
+    void delete(UUID id);
+
     Optional<Document> findById(UUID id);
 
     List<Document> findByOwner(Document.OwnerType ownerType, UUID ownerId);
