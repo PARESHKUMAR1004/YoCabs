@@ -53,7 +53,7 @@ public class TripLocationController {
     ) {
         return tripLocationService
                 .track(actor, bookingId)
-                .map(tracked -> LocationResponse.from(tracked.location(), tracked.estimate()))
+                .map(tracked -> LocationResponse.from(tracked.location(), tracked.estimate(), tracked.phase()))
                 .orElse(null);
     }
 
@@ -109,13 +109,19 @@ public class TripLocationController {
             Instant recordedAt,
             Double remainingDistanceKm,
             Integer remainingMinutes,
-            Double tripDistanceKm
+            Double tripDistanceKm,
+            /** TO_PICKUP while the driver is coming, TO_DESTINATION once the trip has started. */
+            String phase
     ) {
         static LocationResponse from(TripLocation location) {
-            return from(location, null);
+            return from(location, null, null);
         }
 
-        static LocationResponse from(TripLocation location, TripEstimateService.Estimate estimate) {
+        static LocationResponse from(
+                TripLocation location,
+                TripEstimateService.Estimate estimate,
+                String phase
+        ) {
             return new LocationResponse(
                     location.bookingId(),
                     location.latitude(),
@@ -125,7 +131,8 @@ public class TripLocationController {
                     location.recordedAt(),
                     estimate == null ? null : estimate.remainingKm(),
                     estimate == null ? null : estimate.remainingMinutes(),
-                    estimate == null ? null : estimate.tripKm()
+                    estimate == null ? null : estimate.tripKm(),
+                    phase
             );
         }
     }

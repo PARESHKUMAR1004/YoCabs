@@ -109,8 +109,15 @@ public abstract class MarketplaceFixtures extends IntegrationTestBase {
             throws Exception {
         post("/api/v1/bookings/" + bookingId + "/driver", partner.ownerToken(),
                 "{\"driverId\":\"" + driver.id() + "\"}");
+        shareLocation(driver, bookingId);
         post("/api/v1/bookings/" + bookingId + "/start", driver.token(), tripCode(tourist, bookingId));
         post("/api/v1/bookings/" + bookingId + "/complete", driver.token(), "{}");
+    }
+
+    /** The driver's app reports where it is: a trip cannot start without it. */
+    protected void shareLocation(Driver driver, UUID bookingId) throws Exception {
+        post("/api/v1/bookings/" + bookingId + "/location", driver.token(),
+                "{\"latitude\":20.2444,\"longitude\":85.8178}");
     }
 
     /** The request body a driver sends: the code the tourist can currently read in their app. */

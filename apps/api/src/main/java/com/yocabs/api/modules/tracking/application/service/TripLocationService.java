@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,7 +33,8 @@ import java.util.stream.Collectors;
  * Live driver positions during a trip.
  *
  * Location is personal data, so it is fenced in three ways: a driver may only report against their
- * own trip, positions are only accepted and served while that trip is actually in progress, and
+ * own trip, positions are only accepted and served while that trip is running or is due today with
+ * a driver assigned, and
  * only the traveller on it, the partner running it, or an administrator may read one. Nothing is kept beyond the
  * current position, and a sweep clears anything a finished trip left behind.
  */
@@ -48,6 +51,8 @@ public class TripLocationService {
 
     private final TripEstimateService estimates;
 
+    private final ZoneId zone;
+
     private final Duration staleAfter;
 
     public TripLocationService(
@@ -56,6 +61,7 @@ public class TripLocationService {
             BookingService bookingService,
             TripRequestRepository tripRequests,
             TripEstimateService estimates,
+            @Value("${yocabs.booking.zone:Asia/Kolkata}") String zone,
             @Value("${yocabs.tracking.stale-after-minutes:180}") long staleAfterMinutes
     ) {
         this.locations = locations;
@@ -63,6 +69,7 @@ public class TripLocationService {
         this.bookingService = bookingService;
         this.tripRequests = tripRequests;
         this.estimates = estimates;
+        this.zone = ZoneId.of(zone);
         this.staleAfter = Duration.ofMinutes(staleAfterMinutes);
     }
 
@@ -84,9 +91,9 @@ public class TripLocationService {
             throw new AccessDeniedException("Not your assigned booking");
         }
 
-        if (booking.getStatus() != BookingStatus.IN_PROGRESS) {
+        if (!isTrackable(booking)) {
             throw new IllegalStateException(
-                    "Location can only be shared while the trip is in progress"
+                    "Location is shared from the day of the trip, once a driver is assigned"
             );
         }
 
@@ -101,23 +108,6 @@ public class TripLocationService {
                         Instant.now()
                 )
         );
-    }
-
-    /** The traveller on the trip, the partner running it, or an administrator sees where the car is. */
-    @Transactional(readOnly = true)
-    public Optional<TripLocation> latest(
-            Actor actor,
-            UUID bookingId
-    ) {
-        Booking booking = requireBooking(bookingId);
-
-        requireWatcher(actor, booking);
-
-        if (booking.getStatus() != BookingStatus.IN_PROGRESS) {
-            return Optional.empty();
-        }
-
-        return locations.findByBookingId(bookingId);
     }
 
     /**
@@ -141,15 +131,33 @@ public class TripLocationService {
 
         requireWatcher(actor, booking);
 
-        if (booking.getStatus() != BookingStatus.IN_PROGRESS) {
+        if (!isTrackable(booking)) {
             return Optional.empty();
         }
+
+        // Before the trip starts the car is on its way to the pickup; after, to the destination.
+        String phase = booking.getStatus() == BookingStatus.IN_PROGRESS ? "TO_DESTINATION" : "TO_PICKUP";
 
         return locations
                 .findByBookingId(bookingId)
                 .map(location ->
-                        new Tracked(location, estimates.estimate(booking, location).orElse(null))
+                        new Tracked(location, estimates.estimate(booking, location).orElse(null), phase)
                 );
+    }
+
+    /**
+     * The car may be followed while the trip runs, and from the day of the trip once a driver has
+     * been assigned: that is when the traveller wants to know the driver is coming. Not before:
+     * a driver is not tracked for a trip that is days away.
+     */
+    private boolean isTrackable(Booking booking) {
+        if (booking.getStatus() == BookingStatus.IN_PROGRESS) {
+            return true;
+        }
+
+        return booking.getStatus() == BookingStatus.CONFIRMED
+                && booking.getDriverId() != null
+                && !booking.getStartDate().isAfter(LocalDate.now(zone));
     }
 
     /** Every trip a partner currently has on the road, with its last known position. */
@@ -255,7 +263,8 @@ public class TripLocationService {
 
     public record Tracked(
             TripLocation location,
-            TripEstimateService.Estimate estimate
+            TripEstimateService.Estimate estimate,
+            String phase
     ) {
     }
 

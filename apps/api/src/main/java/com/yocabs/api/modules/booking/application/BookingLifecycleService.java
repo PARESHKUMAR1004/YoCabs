@@ -15,6 +15,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -29,12 +30,18 @@ public class BookingLifecycleService {
     private final DriverRepository drivers;
     private final ApplicationEventPublisher events;
     private final ZoneId zone;
+    private final DriverLocationGate locationGate;
+    private final boolean requireLocationToStart;
+    private final Duration locationFreshFor;
 
     public BookingLifecycleService(
             BookingRepository bookings,
             BookingService bookingService,
             DriverRepository drivers,
             ApplicationEventPublisher events,
+            DriverLocationGate locationGate,
+            @Value("${yocabs.tracking.require-location-to-start:true}") boolean requireLocationToStart,
+            @Value("${yocabs.tracking.location-fresh-minutes:5}") long locationFreshMinutes,
             @Value("${yocabs.booking.zone:Asia/Kolkata}") String zone
     ) {
         this.bookings = bookings;
@@ -42,6 +49,9 @@ public class BookingLifecycleService {
         this.drivers = drivers;
         this.events = events;
         this.zone = ZoneId.of(zone);
+        this.locationGate = locationGate;
+        this.requireLocationToStart = requireLocationToStart;
+        this.locationFreshFor = Duration.ofMinutes(locationFreshMinutes);
     }
 
     @Transactional
@@ -112,6 +122,16 @@ public class BookingLifecycleService {
                 LocalDate.now(zone),
                 actor.isAdmin() ? booking.getStartCode() : code,
                 Instant.now());
+
+        // The traveller follows the car from here, so a trip cannot begin with the driver's
+        // location switched off. (Nothing has been saved yet, so refusing here changes nothing.)
+        if (requireLocationToStart && !actor.isAdmin()
+                && !locationGate.hasRecentLocation(bookingId, locationFreshFor)) {
+            throw new IllegalStateException(
+                    "Location sharing is off. The driver must allow location in the YoCabs app before the trip can start."
+            );
+        }
+
         Booking saved = bookings.update(booking);
 
         events.publishEvent(

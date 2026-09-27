@@ -1,6 +1,7 @@
 package com.yocabs.api.modules.tracking.application.service;
 
 import com.yocabs.api.modules.booking.domain.model.Booking;
+import com.yocabs.api.modules.booking.domain.model.BookingStatus;
 import com.yocabs.api.modules.routing.application.RouteCalculationService;
 import com.yocabs.api.modules.routing.domain.RouteCalculation;
 import com.yocabs.api.modules.tracking.domain.model.TripLocation;
@@ -52,18 +53,27 @@ public class TripEstimateService {
         this.reuseFor = Duration.ofSeconds(reuseSeconds);
     }
 
-    /** Distance and time left from the car's position to the destination; empty when unknown. */
+    /** Distance and time left from the car's position to where it is heading; empty when unknown. */
     public Optional<Estimate> estimate(Booking booking, TripLocation location) {
 
         Optional<Itinerary> itinerary = itineraryOf(booking);
 
-        if (itinerary.isEmpty() || !hasCoordinates(itinerary.get().destination())) {
+        if (itinerary.isEmpty()) {
+            return Optional.empty();
+        }
+
+        // On its way to the pickup, then to the destination.
+        boolean toPickup = booking.getStatus() != BookingStatus.IN_PROGRESS;
+        Location target = toPickup ? itinerary.get().pickup() : itinerary.get().destination();
+
+        if (!hasCoordinates(target)) {
             return Optional.empty();
         }
 
         Remaining cached = remaining.get(booking.getId());
 
-        if (cached != null && Instant.now().isBefore(cached.at().plus(reuseFor))) {
+        if (cached != null && cached.toPickup() == toPickup
+                && Instant.now().isBefore(cached.at().plus(reuseFor))) {
             return Optional.of(cached.estimate());
         }
 
@@ -72,17 +82,17 @@ public class TripEstimateService {
                     new Itinerary(
                             new Location("Current position", location.latitude(), location.longitude()),
                             List.of(),
-                            itinerary.get().destination()
+                            target
                     )
             );
 
             Estimate estimate = new Estimate(
                     left.distanceKm().doubleValue(),
                     (int) Math.max(1, Math.ceil(left.duration().toSeconds() / 60.0)),
-                    tripDistance(booking, itinerary.get())
+                    toPickup ? null : tripDistance(booking, itinerary.get())
             );
 
-            remaining.put(booking.getId(), new Remaining(estimate, Instant.now()));
+            remaining.put(booking.getId(), new Remaining(estimate, Instant.now(), toPickup));
 
             return Optional.of(estimate);
 
@@ -122,7 +132,7 @@ public class TripEstimateService {
         return location.latitude() != null && location.longitude() != null;
     }
 
-    private record Remaining(Estimate estimate, Instant at) {
+    private record Remaining(Estimate estimate, Instant at, boolean toPickup) {
     }
 
     /** What is left of the trip. {@code tripKm} is the whole journey, so an app can draw progress. */

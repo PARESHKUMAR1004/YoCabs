@@ -172,6 +172,20 @@ class MarketplaceFlowIntegrationTest extends MarketplaceFixtures {
                 status(post("/api/v1/bookings/" + bookingId + "/start", driver.token(), "{\"code\":\"000000x\"}")));
         assertEquals(400,
                 status(post("/api/v1/bookings/" + bookingId + "/start", driver.token(), "{}")));
+
+        // A trip cannot start with the driver's location off...
+        assertEquals(409,
+                status(post("/api/v1/bookings/" + bookingId + "/start", driver.token(), startBody)));
+
+        // ...and from the day of the trip, once a driver is assigned, the traveller sees them coming.
+        assertEquals(200, status(post("/api/v1/bookings/" + bookingId + "/location", driver.token(),
+                "{\"latitude\":20.30,\"longitude\":85.83}")));
+        MvcResult coming = get("/api/v1/bookings/" + bookingId + "/location", tourist);
+        assertEquals(200, status(coming));
+        assertEquals("TO_PICKUP", json(coming, "$.phase"));
+        assertTrue(((Number) json(coming, "$.remainingMinutes")).intValue() >= 1);
+        assertEquals(403, status(get("/api/v1/bookings/" + bookingId + "/location", otherTourist)));
+
         assertEquals("IN_PROGRESS",
                 json(post("/api/v1/bookings/" + bookingId + "/start", driver.token(), startBody), "$.status"));
 
@@ -184,6 +198,7 @@ class MarketplaceFlowIntegrationTest extends MarketplaceFixtures {
         MvcResult followed = get("/api/v1/bookings/" + bookingId + "/location", tourist);
         assertEquals(200, status(followed));
         assertEquals(20.27, ((Number) json(followed, "$.latitude")).doubleValue(), 0.0001);
+        assertEquals("TO_DESTINATION", json(followed, "$.phase"));
         // ...and how far the car still has to go.
         assertTrue(((Number) json(followed, "$.remainingDistanceKm")).doubleValue() >= 0);
         assertTrue(((Number) json(followed, "$.remainingMinutes")).intValue() >= 1);
