@@ -22,5 +22,7 @@ public interface NegotiationRepository {
 
     List<Negotiation> findByPartnerId(UUID travelPartnerId, NegotiationStatus status);
 
+    List<Negotiation> findByTouristId(UUID touristId);
+
     List<Negotiation> findOpenDueForExpiry(Instant now);
 }

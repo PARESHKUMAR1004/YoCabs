@@ -26,7 +26,9 @@ import java.util.concurrent.ThreadLocalRandom;
                 "yocabs.rate-limit.otp-per-minute=1000",
                 "yocabs.rate-limit.search-per-minute=1000",
                 "yocabs.storage.local-path=build/test-documents",
-                "yocabs.routing.provider=haversine"
+                "yocabs.routing.provider=haversine",
+                // Tests must never talk to the real push service.
+                "yocabs.push.expo.enabled=false"
         }
 )
 @AutoConfigureMockMvc

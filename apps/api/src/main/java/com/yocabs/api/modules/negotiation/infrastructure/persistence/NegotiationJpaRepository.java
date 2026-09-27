@@ -20,6 +20,8 @@ public interface NegotiationJpaRepository
 
     List<NegotiationEntity> findByTripRequestId(UUID tripRequestId);
 
+    List<NegotiationEntity> findByTouristIdOrderByCreatedAtDesc(UUID touristId);
+
     List<NegotiationEntity> findByTravelPartnerIdOrderByCreatedAtDesc(UUID travelPartnerId);
 
     List<NegotiationEntity> findByTravelPartnerIdAndStatusOrderByCreatedAtDesc(

@@ -34,6 +34,17 @@ public class ExploreController {
                 .toList();
     }
 
+    /** Every cab working around the place, so the app can group them by model. */
+    @GetMapping("/vehicles")
+    public List<PartnerVehicleResponse> vehicles(
+            @RequestParam double latitude,
+            @RequestParam double longitude
+    ) {
+        return exploreService.vehiclesNear(latitude, longitude).stream()
+                .map(PartnerVehicleResponse::from)
+                .toList();
+    }
+
     @GetMapping("/partners/{partnerId}")
     public PartnerDetailResponse partner(
             @PathVariable UUID partnerId,
@@ -105,6 +116,24 @@ public class ExploreController {
                             .map(facility -> new FacilityResponse(facility.code(), facility.name()))
                             .toList(),
                     showcase.photoIds().stream().map(id -> photoPath(vehicle.getId(), id)).toList()
+            );
+        }
+    }
+
+    public record PartnerVehicleResponse(
+            UUID partnerId,
+            String partnerName,
+            double partnerRating,
+            long partnerReviewCount,
+            VehicleResponse vehicle
+    ) {
+        static PartnerVehicleResponse from(ExploreService.PartnerVehicle item) {
+            return new PartnerVehicleResponse(
+                    item.partnerId(),
+                    item.partnerName(),
+                    item.partnerRating(),
+                    item.partnerReviewCount(),
+                    VehicleResponse.from(item.vehicle())
             );
         }
     }

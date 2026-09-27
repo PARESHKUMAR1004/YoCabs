@@ -93,6 +93,15 @@ public class NegotiationController {
         );
     }
 
+    /** The signed-in tourist's offers, optionally only those in one state. */
+    @GetMapping("/api/v1/negotiations")
+    public List<NegotiationResponse> listMine(
+            @CurrentActor Actor actor,
+            @RequestParam(required = false) NegotiationStatus status
+    ) {
+        return assembler.toResponses(negotiationService.listForTourist(actor, status));
+    }
+
     @GetMapping("/api/v1/travel-partners/{travelPartnerId}/negotiations")
     public List<NegotiationResponse> listForPartner(
             @CurrentActor Actor actor,

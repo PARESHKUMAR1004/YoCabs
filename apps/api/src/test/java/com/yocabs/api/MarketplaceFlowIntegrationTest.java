@@ -77,6 +77,12 @@ class MarketplaceFlowIntegrationTest extends MarketplaceFixtures {
 
         UUID negotiationId = UUID.fromString(json(started, "$.id"));
 
+        // The tourist can see their offer in progress; nobody else sees it.
+        MvcResult mine = get("/api/v1/negotiations?status=OFFER_SENT", tourist);
+        assertEquals(200, status(mine));
+        assertEquals(negotiationId.toString(), json(mine, "$[0].id"));
+        assertEquals(0, ((List<?>) json(get("/api/v1/negotiations", touristToken()), "$")).size());
+
         // The tourist cannot make a second offer to the same partner for the same trip.
         assertEquals(409,
                 status(post("/api/v1/trip-requests/" + tripRequestId + "/negotiations", tourist,

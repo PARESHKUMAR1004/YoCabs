@@ -66,6 +66,40 @@ public class ExploreService {
                 .toList();
     }
 
+    /** Every vehicle working around the point, with who runs it: for browsing by the car itself. */
+    @Transactional(readOnly = true)
+    public List<PartnerVehicle> vehiclesNear(double latitude, double longitude) {
+
+        Coverage coverage = coverage(latitude, longitude);
+
+        if (coverage.vehicles().isEmpty()) {
+            return List.of();
+        }
+
+        Map<UUID, Showcase> shown = showcaseFor(coverage);
+        Map<UUID, RatingSummary> ratings = new java.util.HashMap<>();
+
+        List<PartnerVehicle> result = new ArrayList<>();
+
+        coverage.vehicles().forEach((partnerId, theirs) -> {
+            TravelPartner partner = coverage.partners().get(partnerId);
+            RatingSummary rating = ratings.computeIfAbsent(partnerId, reviews::summary);
+
+            theirs.forEach(vehicle ->
+                    result.add(new PartnerVehicle(
+                            partner.getId(), partner.getName(), rating.average(), rating.count(),
+                            new VehicleView(vehicle, shown.get(vehicle.getId()))
+                    )));
+        });
+
+        result.sort(Comparator
+                .comparing((PartnerVehicle item) -> item.vehicle().vehicle().getCategory().name())
+                .thenComparing(item -> item.vehicle().vehicle().getMake(), String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(item -> item.vehicle().vehicle().getModel(), String.CASE_INSENSITIVE_ORDER));
+
+        return result;
+    }
+
     /** One partner and the vehicles of theirs that work around the point. */
     @Transactional(readOnly = true)
     public PartnerDetail partner(UUID partnerId, double latitude, double longitude) {
@@ -158,6 +192,15 @@ public class ExploreService {
     }
 
     public record VehicleView(Vehicle vehicle, Showcase showcase) {
+    }
+
+    public record PartnerVehicle(
+            UUID partnerId,
+            String partnerName,
+            double partnerRating,
+            long partnerReviewCount,
+            VehicleView vehicle
+    ) {
     }
 
     public record PartnerDetail(PartnerSummary partner, List<VehicleView> vehicles) {

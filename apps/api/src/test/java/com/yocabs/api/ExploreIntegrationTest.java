@@ -36,6 +36,22 @@ class ExploreIntegrationTest extends MarketplaceFixtures {
     }
 
     @Test
+    void carsWorkingAroundAPointAreListedWithWhoRunsThem() throws Exception {
+        Partner partner = createActivePartner("SUV", 7);
+
+        MvcResult near = get("/api/v1/explore/vehicles?" + BHUBANESWAR, null);
+        assertEquals(200, status(near));
+
+        List<?> mine = json(near, "$[?(@.vehicle.id=='" + partner.vehicleId() + "')]");
+        assertEquals(1, mine.size());
+        Map<?, ?> item = (Map<?, ?>) mine.getFirst();
+        assertEquals(partner.id().toString(), item.get("partnerId"));
+        assertTrue(((String) item.get("partnerName")).length() > 0);
+
+        assertTrue(((List<?>) json(get("/api/v1/explore/vehicles?" + DELHI, null), "$[?(@.vehicle.id=='" + partner.vehicleId() + "')]")).isEmpty());
+    }
+
+    @Test
     void aPartnersVehiclesShowTheirDetailsAndPhotos() throws Exception {
         Partner partner = createActivePartner("SEDAN", 4);
 

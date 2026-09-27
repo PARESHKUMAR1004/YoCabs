@@ -2,6 +2,7 @@ package com.yocabs.api.modules.notification.application;
 
 import com.yocabs.api.modules.identity.domain.model.UserAccount;
 import com.yocabs.api.modules.identity.domain.repository.UserAccountRepository;
+import com.yocabs.api.modules.notification.application.PushSender.PushMessage;
 import com.yocabs.api.modules.notification.domain.model.Notification;
 import com.yocabs.api.modules.notification.domain.repository.NotificationRepository;
 import com.yocabs.api.shared.events.NotificationRequested;
@@ -13,7 +14,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -63,6 +67,8 @@ public class NotificationService {
                     .forEach(user -> recipients.add(user.getId()));
         }
 
+        List<PushMessage> toPush = new ArrayList<>();
+
         for (UUID recipient : recipients) {
             notifications.save(
                     Notification.create(
@@ -71,12 +77,36 @@ public class NotificationService {
                     )
             );
 
-            try {
-                pushSender.send(recipient, event.title(), event.body());
-            } catch (RuntimeException exception) {
-                log.warn("Push delivery failed for {}", recipient, exception);
-            }
+            toPush.add(new PushMessage(
+                    recipient, event.type(), event.title(), event.body(),
+                    event.referenceType(), event.referenceId()
+            ));
         }
+
+        // Only tell people's phones about things that really happened: after the change committed.
+        afterCommit(() -> toPush.forEach(this::push));
+    }
+
+    private void push(PushMessage message) {
+        try {
+            pushSender.send(message);
+        } catch (RuntimeException exception) {
+            log.warn("Push delivery failed for {}", message.recipientUserId(), exception);
+        }
+    }
+
+    private static void afterCommit(Runnable action) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            action.run();
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                action.run();
+            }
+        });
     }
 
     @Transactional(readOnly = true)

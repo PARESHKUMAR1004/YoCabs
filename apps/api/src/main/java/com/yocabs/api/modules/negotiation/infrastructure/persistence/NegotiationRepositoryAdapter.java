@@ -71,6 +71,13 @@ public class NegotiationRepositoryAdapter implements NegotiationRepository {
 
     @Override
     @Transactional(readOnly = true)
+    public List<Negotiation> findByTouristId(UUID touristId) {
+        return jpa.findByTouristIdOrderByCreatedAtDesc(touristId).stream()
+                .map(NegotiationEntity::toDomain).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<Negotiation> findOpenDueForExpiry(Instant now) {
         return jpa.findOpenDueForExpiry(now).stream()
                 .map(NegotiationEntity::toDomain).toList();

@@ -219,6 +219,17 @@ public class NegotiationService {
         return negotiations.findByTripRequestId(tripRequestId);
     }
 
+    /** The tourist's own offers, newest first: the ones still open are the ones needing attention. */
+    @Transactional(readOnly = true)
+    public List<Negotiation> listForTourist(Actor actor, NegotiationStatus status) {
+
+        actor.requireRole(Role.TOURIST);
+
+        return negotiations.findByTouristId(actor.userId()).stream()
+                .filter(negotiation -> status == null || negotiation.getStatus() == status)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public List<Negotiation> listForPartner(Actor actor, UUID travelPartnerId, NegotiationStatus status) {
 
