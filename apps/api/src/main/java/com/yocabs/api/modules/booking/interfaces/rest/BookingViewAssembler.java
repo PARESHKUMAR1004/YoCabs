@@ -8,6 +8,7 @@ import com.yocabs.api.modules.booking.interfaces.rest.BookingController.VehicleS
 import com.yocabs.api.modules.driver.domain.model.Driver;
 import com.yocabs.api.modules.driver.domain.repository.DriverRepository;
 import com.yocabs.api.modules.identity.domain.model.UserAccount;
+import com.yocabs.api.modules.review.domain.ReviewRepository;
 import com.yocabs.api.modules.identity.domain.repository.UserAccountRepository;
 import com.yocabs.api.modules.travelpartner.domain.model.TravelPartner;
 import com.yocabs.api.modules.travelpartner.domain.repository.TravelPartnerRepository;
@@ -37,17 +38,20 @@ public class BookingViewAssembler {
     private final VehicleRepository vehicles;
     private final DriverRepository drivers;
     private final UserAccountRepository users;
+    private final ReviewRepository reviews;
 
     public BookingViewAssembler(
             TravelPartnerRepository partners,
             VehicleRepository vehicles,
             DriverRepository drivers,
-            UserAccountRepository users
+            UserAccountRepository users,
+            ReviewRepository reviews
     ) {
         this.partners = partners;
         this.vehicles = vehicles;
         this.drivers = drivers;
         this.users = users;
+        this.reviews = reviews;
     }
 
     @Transactional(readOnly = true)
@@ -79,9 +83,21 @@ public class BookingViewAssembler {
                                     vehicle,
                                     driverFor(booking, viewer, driverCache),
                                     touristFor(booking, viewer, userCache)
-                            );
+                            )
+                            .withReviewed(reviewed(booking, viewer));
                 })
                 .toList();
+    }
+
+    /**
+     * Whether a completed trip already has a review. Only worth asking for a tourist looking at
+     * their own completed trip: that is the only screen offering to rate it.
+     */
+    private boolean reviewed(Booking booking, Actor viewer) {
+        if (viewer.role() != Role.TOURIST || booking.getStatus() != BookingStatus.COMPLETED) {
+            return false;
+        }
+        return reviews.findByBookingId(booking.getId()).isPresent();
     }
 
     private PersonSummary driverFor(

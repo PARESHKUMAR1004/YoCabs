@@ -219,10 +219,15 @@ class MarketplaceFlowIntegrationTest extends MarketplaceFixtures {
                 json(post("/api/v1/bookings/" + bookingId + "/complete", driver.token(), "{}"), "$.status"));
 
         // --- review and settlement ------------------------------------------------------------
+        // Not yet rated: the tourist's own view says so.
+        assertEquals(false, json(get("/api/v1/bookings/" + bookingId, tourist), "$.reviewed"));
+
         assertEquals(201,
                 status(post("/api/v1/bookings/" + bookingId + "/review", tourist,
                         "{\"rating\":5,\"comment\":\"Great trip\"}")));
 
+        // Once rated, the booking says so and a second review is refused.
+        assertEquals(true, json(get("/api/v1/bookings/" + bookingId, tourist), "$.reviewed"));
         assertEquals(409,
                 status(post("/api/v1/bookings/" + bookingId + "/review", tourist, "{\"rating\":4}")));
 

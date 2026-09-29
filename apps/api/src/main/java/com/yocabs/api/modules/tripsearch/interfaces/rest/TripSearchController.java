@@ -2,6 +2,8 @@ package com.yocabs.api.modules.tripsearch.interfaces.rest;
 
 import com.yocabs.api.modules.pricing.interfaces.rest.TripPricingController.PriceCalculationResponse;
 import com.yocabs.api.modules.review.application.ReviewService;
+import com.yocabs.api.modules.standardrate.application.StandardRateService;
+import com.yocabs.api.modules.standardrate.domain.StandardRate;
 import com.yocabs.api.modules.review.domain.ReviewRepository.RatingSummary;
 import com.yocabs.api.modules.triprequest.domain.model.TripType;
 import com.yocabs.api.modules.triprequest.domain.valueobject.Itinerary;
@@ -32,15 +34,18 @@ public class TripSearchController {
     private final TripSearchService tripSearchService;
     private final ReviewService reviewService;
     private final VehicleShowcaseService showcaseService;
+    private final StandardRateService standardRateService;
 
     public TripSearchController(
             TripSearchService tripSearchService,
             ReviewService reviewService,
-            VehicleShowcaseService showcaseService
+            VehicleShowcaseService showcaseService,
+            StandardRateService standardRateService
     ) {
         this.tripSearchService = tripSearchService;
         this.reviewService = reviewService;
         this.showcaseService = showcaseService;
+        this.standardRateService = standardRateService;
     }
 
     @PostMapping
@@ -52,6 +57,8 @@ public class TripSearchController {
                 tripSearchService.searchWithRoute(request.toCriteria());
 
         Map<UUID, RatingSummary> ratings = new HashMap<>();
+        Map<com.yocabs.api.modules.vehicle.domain.model.VehicleCategory, StandardRate> standardRates =
+                standardRateService.byCategory();
 
         Map<UUID, Showcase> showcases =
                 showcaseService.forVehicles(
@@ -67,8 +74,18 @@ public class TripSearchController {
                                             reviewService::summary
                                     );
 
+                            StandardRate standardRate =
+                                    standardRates.get(option.vehicle().getCategory());
+
+                            BigDecimal standardAmount =
+                                    standardRate == null
+                                            ? null
+                                            : standardRate.perKmRate()
+                                                    .multiply(result.route().distanceKm())
+                                                    .setScale(2, java.math.RoundingMode.HALF_UP);
+
                             return SearchOptionResponse.from(
-                                    option, rating, showcases.get(option.vehicle().getId()));
+                                    option, rating, showcases.get(option.vehicle().getId()), standardAmount);
                         })
                         .toList();
 
@@ -104,13 +121,16 @@ public class TripSearchController {
             List<FacilityResponse> facilities,
             List<String> photos,
             String tripType,
-            PriceCalculationResponse price
+            PriceCalculationResponse price,
+            /** What YoCabs considers a typical fare for this vehicle type over this distance; null when no admin rate is set. */
+            BigDecimal standardAmount
     ) {
 
         static SearchOptionResponse from(
                 com.yocabs.api.modules.pricing.application.model.PricedTravelOption option,
                 RatingSummary rating,
-                Showcase showcase
+                Showcase showcase,
+                BigDecimal standardAmount
         ) {
             var vehicle = option.vehicle();
 
@@ -136,7 +156,8 @@ public class TripSearchController {
                             .map(id -> "/api/v1/vehicles/" + vehicle.getId() + "/photos/" + id)
                             .toList(),
                     option.tripType().name(),
-                    PriceCalculationResponse.from(option.price())
+                    PriceCalculationResponse.from(option.price()),
+                    standardAmount
             );
         }
     }

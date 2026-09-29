@@ -157,7 +157,9 @@ public class BookingController {
             PersonSummary tourist,
             String cancellationReason,
             Instant createdAt,
-            String tripCode
+            String tripCode,
+            /** Tourist only. Whether this completed trip has already been rated once. */
+            boolean reviewed
     ) {
 
         public static BookingResponse from(Booking booking, Actor viewer) {
@@ -195,7 +197,17 @@ public class BookingController {
                     booking.getCancellationReason(),
                     booking.getCreatedAt(),
                     // Only the tourist is shown the code; the driver has to be told it in person.
-                    viewer.role() == Role.TOURIST ? booking.codeToShowTourist() : null
+                    viewer.role() == Role.TOURIST ? booking.codeToShowTourist() : null,
+                    false
+            );
+        }
+
+        BookingResponse withReviewed(boolean reviewed) {
+            return new BookingResponse(
+                    id, tripRequestId, travelPartnerId, partnerName, vehicleId, vehicle, negotiationId,
+                    tripType, startDate, endDate, passengerCount, pickup, destination, status, currency,
+                    totalAmount, tokenAmount, commissionAmount, priceComponents, holdExpiresAt,
+                    driverId, driver, tourist, cancellationReason, createdAt, tripCode, reviewed
             );
         }
 
@@ -209,7 +221,7 @@ public class BookingController {
                     id, tripRequestId, travelPartnerId, partnerName, vehicleId, vehicle, negotiationId,
                     tripType, startDate, endDate, passengerCount, pickup, destination, status, currency,
                     totalAmount, tokenAmount, commissionAmount, priceComponents, holdExpiresAt,
-                    driverId, driver, tourist, cancellationReason, createdAt, tripCode
+                    driverId, driver, tourist, cancellationReason, createdAt, tripCode, reviewed
             );
         }
     }
