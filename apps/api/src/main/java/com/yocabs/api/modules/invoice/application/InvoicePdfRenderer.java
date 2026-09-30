@@ -15,7 +15,6 @@ import com.yocabs.api.modules.booking.domain.model.Booking;
 import com.yocabs.api.modules.payment.domain.model.Payment;
 import com.yocabs.api.modules.payment.domain.model.PaymentPurpose;
 import com.yocabs.api.modules.payment.domain.model.PaymentStatus;
-import com.yocabs.api.modules.pricing.domain.PriceComponent;
 import org.springframework.stereotype.Component;
 
 import java.awt.Color;
@@ -128,10 +127,9 @@ public class InvoicePdfRenderer {
         document.add(partner);
     }
 
+    /** Just the one figure: the traveller is never shown how the fare is built up, on the app or here. */
     private void fareTable(Document document, Booking booking) throws DocumentException {
         Font heading = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, INK);
-        Font label = FontFactory.getFont(FontFactory.HELVETICA, 10, INK);
-        Font amount = FontFactory.getFont(FontFactory.HELVETICA, 10, INK);
         Font totalLabel = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, INK);
         Font totalAmount = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, GOLD.darker());
 
@@ -141,18 +139,6 @@ public class InvoicePdfRenderer {
         table.setWidthPercentage(100);
         table.setWidths(new float[] {3, 1});
         table.setSpacingBefore(8);
-
-        for (PriceComponent component : booking.getPriceComponents()) {
-            table.addCell(borderlessCell(component.description(), label, Element.ALIGN_LEFT));
-            table.addCell(borderlessCell(money(component.amount(), booking.getCurrency()), amount, Element.ALIGN_RIGHT));
-        }
-
-        PdfPCell ruleCell = new PdfPCell();
-        ruleCell.setColspan(2);
-        ruleCell.setBorder(PdfPCell.TOP);
-        ruleCell.setBorderColor(RULE);
-        ruleCell.setFixedHeight(8);
-        table.addCell(ruleCell);
 
         table.addCell(borderlessCell("Total fare", totalLabel, Element.ALIGN_LEFT));
         table.addCell(borderlessCell(money(booking.getTotalAmount(), booking.getCurrency()), totalAmount, Element.ALIGN_RIGHT));
