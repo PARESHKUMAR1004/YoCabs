@@ -67,3 +67,6 @@ yocabs:
 
   storage:
     local-path: ${YOCABS_STORAGE_PATH:/var/lib/yocabs/documents}
+
+  invoice:
+    link-secret: ${YOCABS_INVOICE_LINK_SECRET:staging-invoice-secret-change-me}

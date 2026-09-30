@@ -30,6 +30,8 @@ dependencies {
 	runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 	// Reads the orientation a phone camera records, so uploaded photos are stood upright.
 	implementation("com.drewnoakes:metadata-extractor:2.19.0")
+	// Renders the trip invoice as a PDF.
+	implementation("com.github.librepdf:openpdf:1.3.30")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")

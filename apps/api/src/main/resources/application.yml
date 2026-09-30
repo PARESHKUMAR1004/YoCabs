@@ -112,6 +112,10 @@ yocabs:
     max-document-bytes: 10485760
     max-photo-bytes: 41943040
 
+  invoice:
+    # Signs the short-lived, unauthenticated link a tourist's browser opens to view a bill PDF.
+    link-secret: dev-invoice-secret-change-me
+
   verification:
     # Comma-separated Document.Type values that must be APPROVED before a
     # partner can be activated, e.g. GST_CERTIFICATE,TRADE_LICENSE
