@@ -136,6 +136,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/vehicles/*/photos/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/explore/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/standard-rates").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/popular-places").permitAll()
                         // A signed, expiring token is the authorisation here, not a bearer header.
                         .requestMatchers(HttpMethod.GET, "/api/v1/bookings/invoice").permitAll()
                         .requestMatchers("/actuator/**").hasRole("SUPER_ADMIN")
