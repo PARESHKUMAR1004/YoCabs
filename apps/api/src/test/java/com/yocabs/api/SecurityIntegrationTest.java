@@ -25,6 +25,12 @@ class SecurityIntegrationTest extends MarketplaceFixtures {
     }
 
     @Test
+    void theLegalPagesAreReachableWithoutSigningIn() throws Exception {
+        assertEquals(200, status(get("/legal/terms.html", null)));
+        assertEquals(200, status(get("/legal/privacy.html", null)));
+    }
+
+    @Test
     void touristsCannotUseAdminOrPartnerEndpoints() throws Exception {
         String tourist = touristToken();
 
