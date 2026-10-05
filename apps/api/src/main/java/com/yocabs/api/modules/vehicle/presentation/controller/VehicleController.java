@@ -1,6 +1,7 @@
 package com.yocabs.api.modules.vehicle.presentation.controller;
 
 import com.yocabs.api.modules.vehicle.application.service.VehicleService;
+import com.yocabs.api.modules.vehicle.application.service.VehicleShowcaseService;
 import com.yocabs.api.modules.vehicle.domain.model.Vehicle;
 import com.yocabs.api.modules.vehicle.domain.model.VehicleCategory;
 import com.yocabs.api.modules.vehicle.domain.model.VehicleStatus;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -20,12 +22,19 @@ import java.util.UUID;
 public class VehicleController {
 
     private final VehicleService vehicleService;
+    private final VehicleShowcaseService showcaseService;
 
     public VehicleController(
-            VehicleService vehicleService
+            VehicleService vehicleService,
+            VehicleShowcaseService showcaseService
     ) {
         this.vehicleService =
                 vehicleService;
+        this.showcaseService = showcaseService;
+    }
+
+    private static String photoPath(UUID vehicleId, UUID photoId) {
+        return "/api/v1/vehicles/" + vehicleId + "/photos/" + photoId;
     }
 
     @PostMapping
@@ -70,9 +79,12 @@ public class VehicleController {
                         vehicleId
                 );
 
-        return VehicleResponse.from(
-                vehicle
-        );
+        List<String> photos =
+                showcaseService.forVehicles(List.of(vehicleId)).get(vehicleId).photoIds().stream()
+                        .map(photoId -> photoPath(vehicleId, photoId))
+                        .toList();
+
+        return VehicleResponse.from(vehicle, photos);
     }
 
     @PutMapping("/{vehicleId}")
@@ -110,12 +122,18 @@ public class VehicleController {
         actor.requirePartnerAccess(travelPartnerId);
 
 
-        return vehicleService
-                .listVehicles(
-                        travelPartnerId
-                )
-                .stream()
-                .map(VehicleResponse::from)
+        List<Vehicle> vehicles = vehicleService.listVehicles(travelPartnerId);
+
+        Map<UUID, VehicleShowcaseService.Showcase> showcases =
+                showcaseService.forVehicles(vehicles.stream().map(Vehicle::getId).toList());
+
+        return vehicles.stream()
+                .map(vehicle -> VehicleResponse.from(
+                        vehicle,
+                        showcases.get(vehicle.getId()).photoIds().stream()
+                                .map(photoId -> photoPath(vehicle.getId(), photoId))
+                                .toList()
+                ))
                 .toList();
     }
 
@@ -231,12 +249,21 @@ public class VehicleController {
             int passengerCapacity,
             VehicleStatus status,
             List<ServiceAreaResponse> serviceAreas,
+            List<String> photos,
             Instant createdAt,
             Instant updatedAt
     ) {
 
+        /** Used by actions that change status or details but don't touch photos. */
         public static VehicleResponse from(
                 Vehicle vehicle
+        ) {
+            return from(vehicle, List.of());
+        }
+
+        public static VehicleResponse from(
+                Vehicle vehicle,
+                List<String> photos
         ) {
 
             return new VehicleResponse(
@@ -257,6 +284,7 @@ public class VehicleController {
                                     area.radiusKm()
                             ))
                             .toList(),
+                    photos,
                     vehicle.getCreatedAt(),
                     vehicle.getUpdatedAt()
             );
