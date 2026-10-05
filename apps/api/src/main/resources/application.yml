@@ -31,6 +31,16 @@ server:
     # Above the upload limit, so an oversize upload is refused with a message rather than by
     # cutting the connection, which the app can only report as "cannot reach the server".
     max-swallow-size: 50MB
+    threads:
+      # Sized for a small single-instance container: more threads than the CPU can actually
+      # service just adds context-switching overhead and makes every request slower, which is
+      # how a handful of slow external calls turned into multi-minute queues under load testing.
+      max: 60
+      min-spare: 10
+    # Connections beyond max threads + accept-count are refused immediately (connection reset)
+    # instead of queueing indefinitely - a fast, honest failure beats a multi-minute hang.
+    accept-count: 40
+    connection-timeout: 20000
 
 logging:
   pattern:

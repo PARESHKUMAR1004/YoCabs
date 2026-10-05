@@ -32,6 +32,10 @@ dependencies {
 	implementation("com.drewnoakes:metadata-extractor:2.19.0")
 	// Renders the trip invoice as a PDF.
 	implementation("com.github.librepdf:openpdf:1.3.30")
+	// Caches route calculations so a popular pickup/destination pair isn't re-quoted from the
+	// routing provider on every search.
+	implementation("org.springframework.boot:spring-boot-starter-cache")
+	implementation("com.github.ben-manes.caffeine:caffeine")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")

@@ -7,6 +7,7 @@ import com.yocabs.api.modules.triprequest.domain.valueobject.Itinerary;
 import com.yocabs.api.modules.triprequest.domain.valueobject.Location;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -68,6 +69,7 @@ public class GoogleRoutesCalculationService
     }
 
     @Override
+    @Cacheable(cacheNames = "routes", key = "T(com.yocabs.api.modules.routing.infrastructure.RouteCacheKeys).of(#itinerary)")
     public RouteCalculation calculate(Itinerary itinerary) {
 
         List<Location> points =
