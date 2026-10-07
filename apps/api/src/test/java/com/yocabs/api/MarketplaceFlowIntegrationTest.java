@@ -323,19 +323,31 @@ class MarketplaceFlowIntegrationTest extends MarketplaceFixtures {
     }
 
     @Test
-    void partnerCancellationAlwaysRefundsTheTourist() throws Exception {
+    void partnerCanCancelAnUnpaidBookingAndItRefundsOnceItIsPaid() throws Exception {
 
         Partner partner = createActivePartner("SEDAN", 4);
         String tourist = touristToken();
 
-        UUID tripRequestId = submittedTripRequest(tourist, today(), today(), 2);
-        UUID bookingId = book(tourist, tripRequestId, partner.vehicleId(), null);
-        pay(tourist, bookingId);
+        // Before the token is paid: a partner can still back out.
+        UUID unpaidTrip = submittedTripRequest(tourist, today(), today(), 2);
+        UUID unpaidBooking = book(tourist, unpaidTrip, partner.vehicleId(), null);
+        assertEquals("CANCELLED",
+                json(post("/api/v1/bookings/" + unpaidBooking + "/cancel", partner.ownerToken(),
+                        "{\"reason\":\"Breakdown\"}"), "$.status"));
 
-        post("/api/v1/bookings/" + bookingId + "/cancel", partner.ownerToken(), "{\"reason\":\"Breakdown\"}");
+        // Once the traveller has paid, only the traveller or an admin can still cancel.
+        UUID paidTrip = submittedTripRequest(tourist, today(), today(), 2);
+        UUID paidBooking = book(tourist, paidTrip, partner.vehicleId(), null);
+        pay(tourist, paidBooking);
+
+        assertEquals(403,
+                status(post("/api/v1/bookings/" + paidBooking + "/cancel", partner.ownerToken(),
+                        "{\"reason\":\"Breakdown\"}")));
+
+        post("/api/v1/bookings/" + paidBooking + "/cancel", adminToken(), "{\"reason\":\"Breakdown\"}");
 
         assertEquals("REFUNDED",
-                json(get("/api/v1/bookings/" + bookingId + "/payments", tourist), "$[0].status"));
+                json(get("/api/v1/bookings/" + paidBooking + "/payments", tourist), "$[0].status"));
         assertTrue(body(get("/api/v1/notifications", tourist)).contains("BOOKING_CANCELLED"));
     }
 

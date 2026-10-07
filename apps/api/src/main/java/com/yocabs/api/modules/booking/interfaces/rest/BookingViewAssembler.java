@@ -10,6 +10,8 @@ import com.yocabs.api.modules.driver.domain.repository.DriverRepository;
 import com.yocabs.api.modules.identity.domain.model.UserAccount;
 import com.yocabs.api.modules.review.domain.ReviewRepository;
 import com.yocabs.api.modules.identity.domain.repository.UserAccountRepository;
+import com.yocabs.api.modules.touristfeedback.application.TouristFeedbackService;
+import com.yocabs.api.modules.touristfeedback.domain.TouristFeedbackRepository;
 import com.yocabs.api.modules.travelpartner.domain.model.TravelPartner;
 import com.yocabs.api.modules.travelpartner.domain.repository.TravelPartnerRepository;
 import com.yocabs.api.modules.vehicle.domain.model.Vehicle;
@@ -39,19 +41,25 @@ public class BookingViewAssembler {
     private final DriverRepository drivers;
     private final UserAccountRepository users;
     private final ReviewRepository reviews;
+    private final TouristFeedbackService touristFeedbackService;
+    private final TouristFeedbackRepository touristFeedback;
 
     public BookingViewAssembler(
             TravelPartnerRepository partners,
             VehicleRepository vehicles,
             DriverRepository drivers,
             UserAccountRepository users,
-            ReviewRepository reviews
+            ReviewRepository reviews,
+            TouristFeedbackService touristFeedbackService,
+            TouristFeedbackRepository touristFeedback
     ) {
         this.partners = partners;
         this.vehicles = vehicles;
         this.drivers = drivers;
         this.users = users;
         this.reviews = reviews;
+        this.touristFeedbackService = touristFeedbackService;
+        this.touristFeedback = touristFeedback;
     }
 
     @Transactional(readOnly = true)
@@ -84,7 +92,9 @@ public class BookingViewAssembler {
                                     driverFor(booking, viewer, driverCache),
                                     touristFor(booking, viewer, userCache)
                             )
-                            .withReviewed(reviewed(booking, viewer));
+                            .withReviewed(reviewed(booking, viewer))
+                            .withDriverFeedbackState(
+                                    balanceSettled(booking, viewer), touristRated(booking, viewer));
                 })
                 .toList();
     }
@@ -98,6 +108,22 @@ public class BookingViewAssembler {
             return false;
         }
         return reviews.findByBookingId(booking.getId()).isPresent();
+    }
+
+    /** Only meaningful for the assigned driver once the trip is done - that is who is asked to wait on it. */
+    private boolean balanceSettled(Booking booking, Actor viewer) {
+        if (viewer.role() != Role.DRIVER || booking.getStatus() != BookingStatus.COMPLETED) {
+            return false;
+        }
+        return touristFeedbackService.isSettled(booking);
+    }
+
+    /** Only meaningful for the assigned driver once the trip is done - that is who can rate it. */
+    private boolean touristRated(Booking booking, Actor viewer) {
+        if (viewer.role() != Role.DRIVER || booking.getStatus() != BookingStatus.COMPLETED) {
+            return false;
+        }
+        return touristFeedback.findByBookingId(booking.getId()).isPresent();
     }
 
     private PersonSummary driverFor(

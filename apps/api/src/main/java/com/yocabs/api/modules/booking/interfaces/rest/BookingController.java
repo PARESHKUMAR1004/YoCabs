@@ -159,7 +159,13 @@ public class BookingController {
             Instant createdAt,
             String tripCode,
             /** Tourist only. Whether this completed trip has already been rated once. */
-            boolean reviewed
+            boolean reviewed,
+            /** Driver only, once COMPLETED. Whether the balance has been paid online (cash paid
+             * directly to the driver is invisible to the app, so this can read "pending" even
+             * when the driver has in fact already been paid in person). */
+            boolean balanceSettled,
+            /** Driver only, once COMPLETED. Whether the driver has already rated the traveller. */
+            boolean touristRated
     ) {
 
         public static BookingResponse from(Booking booking, Actor viewer) {
@@ -198,6 +204,8 @@ public class BookingController {
                     booking.getCreatedAt(),
                     // Only the tourist is shown the code; the driver has to be told it in person.
                     viewer.role() == Role.TOURIST ? booking.codeToShowTourist() : null,
+                    false,
+                    false,
                     false
             );
         }
@@ -207,7 +215,18 @@ public class BookingController {
                     id, tripRequestId, travelPartnerId, partnerName, vehicleId, vehicle, negotiationId,
                     tripType, startDate, endDate, passengerCount, pickup, destination, status, currency,
                     totalAmount, tokenAmount, commissionAmount, priceComponents, holdExpiresAt,
-                    driverId, driver, tourist, cancellationReason, createdAt, tripCode, reviewed
+                    driverId, driver, tourist, cancellationReason, createdAt, tripCode, reviewed,
+                    balanceSettled, touristRated
+            );
+        }
+
+        BookingResponse withDriverFeedbackState(boolean balanceSettled, boolean touristRated) {
+            return new BookingResponse(
+                    id, tripRequestId, travelPartnerId, partnerName, vehicleId, vehicle, negotiationId,
+                    tripType, startDate, endDate, passengerCount, pickup, destination, status, currency,
+                    totalAmount, tokenAmount, commissionAmount, priceComponents, holdExpiresAt,
+                    driverId, driver, tourist, cancellationReason, createdAt, tripCode, reviewed,
+                    balanceSettled, touristRated
             );
         }
 
@@ -221,7 +240,8 @@ public class BookingController {
                     id, tripRequestId, travelPartnerId, partnerName, vehicleId, vehicle, negotiationId,
                     tripType, startDate, endDate, passengerCount, pickup, destination, status, currency,
                     totalAmount, tokenAmount, commissionAmount, priceComponents, holdExpiresAt,
-                    driverId, driver, tourist, cancellationReason, createdAt, tripCode, reviewed
+                    driverId, driver, tourist, cancellationReason, createdAt, tripCode, reviewed,
+                    balanceSettled, touristRated
             );
         }
     }

@@ -39,13 +39,14 @@ class ReportsAndFinanceIntegrationTest extends MarketplaceFixtures {
         completeTrip(partner, driver, tourist, completed);
         post("/api/v1/bookings/" + completed + "/review", tourist, "{\"rating\":5,\"comment\":\"Great\"}");
 
-        // A different trip on another day, cancelled by the partner (always refunded).
+        // A different trip on another day, cancelled by an admin on the partner's behalf (always
+        // refunded) - a partner can no longer cancel a booking once the token is paid.
         String other = touristToken();
         LocalDate later = today().plusDays(3);
         UUID cancelledTrip = submittedTripRequest(other, later, later, 3);
         UUID cancelled = book(other, cancelledTrip, partner.vehicleId(), null);
         UUID payment = pay(other, cancelled);
-        post("/api/v1/bookings/" + cancelled + "/cancel", partner.ownerToken(), "{\"reason\":\"Breakdown\"}");
+        post("/api/v1/bookings/" + cancelled + "/cancel", adminToken(), "{\"reason\":\"Breakdown\"}");
 
         return new Scenario(partner, driver, completed, total, cancelled, payment, tourist);
     }
@@ -132,9 +133,10 @@ class ReportsAndFinanceIntegrationTest extends MarketplaceFixtures {
                 + today().plusDays(10), s.partner().ownerToken());
 
         assertEquals(200, status(report));
-        assertEquals(1, ((Number) json(report, "$.countsByCancelledBy.PARTNER_OWNER")).intValue());
+        // Cancelled by an admin: once the token is paid, a partner can no longer cancel it themself.
+        assertEquals(1, ((Number) json(report, "$.countsByCancelledBy.SUPER_ADMIN")).intValue());
         assertEquals("Breakdown", json(report, "$.cancellations[0].reason"));
-        assertEquals("PARTNER_OWNER", json(report, "$.cancellations[0].cancelledBy"));
+        assertEquals("SUPER_ADMIN", json(report, "$.cancellations[0].cancelledBy"));
 
         BigDecimal refunded = decimal(report, "$.cancellations[0].refunded");
         assertTrue(refunded.signum() > 0);
@@ -186,9 +188,9 @@ class ReportsAndFinanceIntegrationTest extends MarketplaceFixtures {
 
         // Cancellations.
         MvcResult cancellations = get("/api/v1/admin/cancellations?" + window + "&limit=500", admin);
-        assertEquals("PARTNER_OWNER", ((List<?>) json(cancellations,
+        assertEquals("SUPER_ADMIN", ((List<?>) json(cancellations,
                 "$.cancellations[?(@.bookingId=='" + s.cancelledBooking() + "')].cancelledBy")).getFirst());
-        assertTrue(((Number) json(cancellations, "$.countsByCancelledBy.PARTNER_OWNER")).intValue() >= 1);
+        assertTrue(((Number) json(cancellations, "$.countsByCancelledBy.SUPER_ADMIN")).intValue() >= 1);
     }
 
     @Test

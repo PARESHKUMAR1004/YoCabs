@@ -59,6 +59,15 @@ public class BookingCancellationService {
             );
         }
 
+        // Once the traveller has paid the booking token (status CONFIRMED), only the traveller
+        // or an admin can still back out - a partner can no longer unilaterally cancel a trip
+        // someone has already committed money to.
+        if (actor.isPartnerUser() && booking.getStatus() == BookingStatus.CONFIRMED) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "A booking can no longer be cancelled by the travel partner once the traveller has paid the token"
+            );
+        }
+
         Instant now = Instant.now();
         boolean wasPaid = booking.getStatus() == BookingStatus.CONFIRMED;
 
