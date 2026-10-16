@@ -49,6 +49,10 @@ yocabs:
   otp:
     sender: logging
     log-code: true
+    # A fixed OTP for one designated number (e.g. a Play Store / App Store reviewer account), so
+    # someone who can never receive a real SMS can still sign in. Blank disables this.
+    reviewer-mobile: ${YOCABS_OTP_REVIEWER_MOBILE:}
+    reviewer-code: ${YOCABS_OTP_REVIEWER_CODE:}
 
   cors:
     allowed-origins: ${YOCABS_CORS_ALLOWED_ORIGINS:}

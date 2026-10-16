@@ -28,7 +28,9 @@ import java.util.concurrent.ThreadLocalRandom;
                 "yocabs.storage.local-path=build/test-documents",
                 "yocabs.routing.provider=haversine",
                 // Tests must never talk to the real push service.
-                "yocabs.push.expo.enabled=false"
+                "yocabs.push.expo.enabled=false",
+                "yocabs.otp.reviewer-mobile=9000000001",
+                "yocabs.otp.reviewer-code=123456"
         }
 )
 @AutoConfigureMockMvc

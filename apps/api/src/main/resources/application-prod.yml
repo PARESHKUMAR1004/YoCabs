@@ -25,6 +25,8 @@ yocabs:
   otp:
     sender: sms          # requires an OtpSender adapter bean for your SMS provider
     log-code: false
+    reviewer-mobile: ${YOCABS_OTP_REVIEWER_MOBILE:}
+    reviewer-code: ${YOCABS_OTP_REVIEWER_CODE:}
 
   cors:
     allowed-origins: ${YOCABS_CORS_ALLOWED_ORIGINS:}

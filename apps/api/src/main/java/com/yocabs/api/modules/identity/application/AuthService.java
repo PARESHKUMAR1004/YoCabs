@@ -53,6 +53,8 @@ public class AuthService {
     private final int adminMaxFailedLogins;
     private final Duration adminLockDuration;
     private final String dummyHash;
+    private final String reviewerMobile;
+    private final String reviewerCode;
 
     public AuthService(
             UserAccountRepository users,
@@ -67,7 +69,12 @@ public class AuthService {
             @Value("${yocabs.otp.resend-interval-seconds:30}") long otpResendSeconds,
             @Value("${yocabs.security.refresh-token-days:30}") long refreshDays,
             @Value("${yocabs.security.admin-max-failed-logins:5}") int adminMaxFailedLogins,
-            @Value("${yocabs.security.admin-lock-minutes:15}") long adminLockMinutes
+            @Value("${yocabs.security.admin-lock-minutes:15}") long adminLockMinutes,
+            // A single, fixed OTP for one designated number - e.g. a Play Store / App Store
+            // reviewer account - so a human who can never receive a real SMS can still sign in.
+            // Blank (the default) disables this entirely; every other number is unaffected.
+            @Value("${yocabs.otp.reviewer-mobile:}") String reviewerMobile,
+            @Value("${yocabs.otp.reviewer-code:}") String reviewerCode
     ) {
         this.users = users;
         this.otpChallenges = otpChallenges;
@@ -83,6 +90,8 @@ public class AuthService {
         this.adminMaxFailedLogins = adminMaxFailedLogins;
         this.adminLockDuration = Duration.ofMinutes(adminLockMinutes);
         this.dummyHash = passwordEncoder.encode("timing-equalisation-only");
+        this.reviewerMobile = reviewerMobile.isBlank() ? null : normalizeMobile(reviewerMobile);
+        this.reviewerCode = reviewerCode.isBlank() ? null : reviewerCode;
     }
 
     public static String normalizeMobile(String mobile) {
@@ -118,13 +127,20 @@ public class AuthService {
                     );
                 });
 
-        String code = String.format("%06d", secureRandom.nextInt(1_000_000));
+        boolean isReviewerAccount = mobile.equals(reviewerMobile);
+        String code = isReviewerAccount
+                ? reviewerCode
+                : String.format("%06d", secureRandom.nextInt(1_000_000));
 
         otpChallenges.save(
                 OtpChallenge.issue(mobile, hashCode(mobile, code), otpValidity)
         );
 
-        otpSender.send(mobile, code);
+        // The reviewer code is fixed and documented for them, not sent anywhere - there would be
+        // nothing for a store reviewer to receive it on even if we tried.
+        if (!isReviewerAccount) {
+            otpSender.send(mobile, code);
+        }
     }
 
     @Transactional(noRollbackFor = BadCredentialsException.class)
