@@ -32,14 +32,14 @@ server:
     # cutting the connection, which the app can only report as "cannot reach the server".
     max-swallow-size: 50MB
     threads:
-      # Sized for a small single-instance container: more threads than the CPU can actually
-      # service just adds context-switching overhead and makes every request slower, which is
-      # how a handful of slow external calls turned into multi-minute queues under load testing.
-      max: 60
-      min-spare: 10
+      # Sized for thousands of concurrent users with think-time between requests (most of them
+      # idle at any instant), not thousands of simultaneous in-flight requests. Route lookups are
+      # cached (see CacheConfig), so most requests are fast DB reads, not slow external calls.
+      max: 250
+      min-spare: 20
     # Connections beyond max threads + accept-count are refused immediately (connection reset)
     # instead of queueing indefinitely - a fast, honest failure beats a multi-minute hang.
-    accept-count: 40
+    accept-count: 150
     connection-timeout: 20000
 
 logging:
